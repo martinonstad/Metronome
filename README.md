@@ -96,4 +96,8 @@ you. To use the toolchain in your own shell: `. scripts/env.sh`.
 
 ## License
 
-Not yet chosen. Until a license file is added, all rights are reserved by the author.
+[MIT](LICENSE). You may use, copy, change and share the code, including in your own apps, as long as
+the copyright notice and the license text come with it. The libraries the app uses keep their own
+licenses: the Rust crates are almost all MIT or Apache-2.0 (UniFFI's crates are MPL-2.0, which only
+covers changes to UniFFI's own files), and Android's libraries are Apache-2.0. A released app has to
+carry those notices too; see the roadmap.

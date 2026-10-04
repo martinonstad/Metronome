@@ -156,8 +156,10 @@ changes inside a song, tempo ramps, polyrhythms, cloud sync.
 
 ## Open decisions
 
-- **License** — not chosen yet; the repository is public, so add a license file before accepting
-  contributions or reuse.
+- **Licenses of the libraries** — the project itself is MIT ([LICENSE](../LICENSE)). The Apache-2.0,
+  MIT and MPL-2.0 libraries it ships require their license texts to accompany a distributed app;
+  the app has no "open-source licenses" notice yet. Decide how (an About screen, a bundled file) before the
+  first public release.
 - **Android application id** — placeholder `no.onstad.metronom` (in `android/app/build.gradle.kts`
   and the Kotlin package); change it before the first published release, since it is permanent
   once published.
