@@ -19,6 +19,11 @@ const CHANNELS: usize = 2;
 const DEFAULT_SAMPLE_RATE: u32 = 48_000;
 /// Frames rendered per engine call; a larger AAudio buffer is processed in several chunks.
 const CHUNK_FRAMES: usize = 1024;
+/// A metronome is not interactive, so it does not need the low-latency path. Power saving uses
+/// larger hardware bursts and far fewer CPU wake-ups, which suits long sessions with the screen
+/// off. The visual flash stays in sync because it uses the stream's reported latency. (The first
+/// device runs used `LowLatency`: 500 wake-ups a second and four underruns per run.)
+const PERFORMANCE_MODE: AudioPerformanceMode = AudioPerformanceMode::PowerSaving;
 /// Starting buffer, in hardware bursts (about 8 ms on a 2 ms burst). A metronome is not
 /// interactive, so this latency is inaudible and buys resistance to scheduling hiccups.
 const INITIAL_BURSTS: i32 = 4;
@@ -67,7 +72,7 @@ impl Output {
         let stream = AudioStreamBuilder::new()
             .map_err(describe)?
             .direction(AudioDirection::Output)
-            .performance_mode(AudioPerformanceMode::LowLatency)
+            .performance_mode(PERFORMANCE_MODE)
             .sharing_mode(AudioSharingMode::Shared)
             .format(AudioFormat::PCM_Float)
             .channel_count(CHANNELS as i32)
@@ -130,7 +135,8 @@ impl Output {
     pub fn diagnostics(&self) -> String {
         let s = &self.stream;
         format!(
-            "{:?}, {:?}, {} Hz, burst {}, buffer {}/{} frames, xruns {}, callbacks {}, {:?}",
+            "{:?}, {:?}, {} Hz, burst {}, buffer {}/{} frames, xruns {}, callbacks {}, \
+             delivered {}, {:?}",
             s.performance_mode(),
             s.sharing_mode(),
             s.sample_rate(),
@@ -139,6 +145,7 @@ impl Output {
             s.buffer_capacity_in_frames(),
             s.x_run_count(),
             self.health.callbacks.load(Relaxed),
+            s.frames_written(),
             s.state(),
         )
     }

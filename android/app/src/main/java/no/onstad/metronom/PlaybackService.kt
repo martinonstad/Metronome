@@ -41,17 +41,19 @@ class PlaybackService : Service() {
 
   /**
    * Debug builds only: a timestamped record that survives the small log buffer and an unplugged
-   * USB cable, including whether the phone was in Doze, interactive or charging. Read it with
+   * USB cable, including whether the phone was in Doze, interactive or charging, and the battery
+   * level (whole percent, so only a rough indication of drain). Read it with
    * `adb shell run-as no.onstad.metronom cat files/diagnostics.log`.
    */
   private fun appendToDiagnosticsFile(line: String) {
     val power = getSystemService(PowerManager::class.java)
     val battery = getSystemService(BatteryManager::class.java)
+    val level = battery.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
     val file = File(filesDir, DIAGNOSTICS_FILE)
     if (file.length() > MAX_DIAGNOSTICS_FILE_BYTES) file.delete()
     file.appendText(
       "${LocalDateTime.now().withNano(0)} | doze=${power.isDeviceIdleMode} " +
-        "interactive=${power.isInteractive} charging=${battery.isCharging} | $line\n"
+        "interactive=${power.isInteractive} charging=${battery.isCharging} battery=$level% | $line\n"
     )
   }
 

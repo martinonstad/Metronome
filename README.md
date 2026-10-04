@@ -7,10 +7,10 @@ phone.
 
 > **Status: early development (Milestone 0 of 5).** The metronome engine is written and tested
 > on the development machine, and a minimal Android app (start/stop, tempo, beats per bar,
-> foreground service) builds and has been run on one phone (a Pixel 8 Pro): the low-latency
-> audio stream works and keeps running for 30+ minutes with the screen off, including in deep
-> Doze on battery. A few audio underruns still occur a few minutes after the screen goes off;
-> the buffer now grows by itself when they happen, and their cause is being investigated. The
+> foreground service) builds and has been run on one phone (a Pixel 8 Pro): the audio stream
+> keeps running for 30+ minutes with the screen off, including in deep Doze on battery. With the
+> power-saving audio mode there were no underruns in a 33-minute run (the low-latency mode had
+> four per run). This is one run on one phone, and a listening check is still outstanding. The
 > markdown library and the iPhone app are not built yet. See [Status](#status) and the [roadmap](docs/roadmap.md).
 
 ## Goals

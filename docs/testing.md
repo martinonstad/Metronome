@@ -60,7 +60,7 @@ again before each release. Use `Metronome::diagnostics()` (shown in the app) for
 | # | Check | Pass criteria |
 |---|---|---|
 | 1 | Start at 120 BPM, listen for 5 minutes | Steady, no audible jitter or clicks/pops |
-| 2 | Diagnostics line after 5 minutes | Performance mode is `LowLatency`; xruns stays at 0 (or very low) |
+| 2 | Diagnostics line after 5 minutes | Performance mode is the one requested (`PowerSaving`); xruns stays at 0 (or very low); `delivered` advances by about 48 000 per second |
 | 3 | Lock the screen for 10 minutes | Playback continues without gaps |
 | 4 | Switch to another app and back | Playback continues |
 | 5 | Plug and unplug wired headphones | Playback resumes on the new output, or stops cleanly and can be restarted |
@@ -144,14 +144,44 @@ What this shows and does not show:
   clean, or whether the stall simply did not recur. One run on one device cannot say.
 - **Not covered:** listening judgement of the run, other devices, headphones, calls.
 
-### Next experiment (proposed, not done)
+### Battery run, `PowerSaving` mode — 2026-10-04, 33 minutes
 
-Try `PowerSaving` performance mode instead of `LowLatency`. A metronome does not need low
-latency, and this mode uses larger hardware bursts and far fewer wake-ups (the current stream
-wakes the CPU 500 times a second), which should both reduce the chance of a missed deadline and
-use less battery during long rehearsals. The blink stays in sync because it is derived from the
-stream's reported latency. Repeat the same battery run and compare underruns, callbacks per
-second and, if possible, battery drain.
+The experiment proposed after the run above: request `PowerSaving` instead of `LowLatency`
+(a metronome does not need low latency). Same phone, same procedure: started on USB power,
+screen off, unplugged 18:03:02, replugged 18:35:11; 198 lines recorded.
+
+| Check | `LowLatency` (above) | `PowerSaving` |
+|---|---|---|
+| Granted | burst 96 frames (2 ms), buffer 384 → 576 | burst 1922 frames (40 ms), buffer 3844 frames (80 ms, the capacity) |
+| On battery, screen off | 30.8 min | 32.0 min |
+| Deep Doze | 29.7 min | **30.5 min** |
+| Service survived | yes | yes (no `service destroyed` line) |
+| **Underruns** | **4** (at 6.4 min into Doze) | **0 for the whole run** |
+| CPU wake-ups (audio callbacks) | 500 per second | **about 49 per second** (10× fewer) |
+| Callbacks per 10 s interval | 5012–5029 | 488–498 (mean 493.6) |
+| Battery level | not recorded | 99 % → 98 % (whole percent: too coarse to compare) |
+
+Reading the results:
+
+- **Underruns: 0 versus 4.** With one run each on one phone this is encouraging rather than
+  proof, but the earlier underruns appeared in both `LowLatency` runs within minutes of the
+  screen going off, and none appeared in 30.5 minutes of deep Doze here.
+- **The callback rate is the same on USB power (49.06 per second) and in deep Doze (49.12 per
+  second),** and the per-interval counts form a tight bell curve (no low outliers, which a stall
+  would produce). The 488–498 spread is timer jitter in the logging, not lost audio.
+- **Callback counts are a weaker continuity measure in this mode** than they were at 500 per
+  second, because callbacks carry about 980–1000 frames and their size varies. The `delivered`
+  frame counter was added afterwards for this reason. A 14-second check on the phone showed
+  48 058 frames per second against 48 000 expected; it has not yet been used in a long run.
+- **Battery drain is not established.** The earlier run did not record the battery level, and
+  one percentage point is too coarse. Ten times fewer wake-ups should help, but that is
+  expected, not measured.
+- **Costs:** about 80 ms of output latency. It is inaudible for a click, but the visual flash
+  must be derived from the stream's reported latency (planned, Milestone 2) or it will appear
+  early. Start/stop and tempo changes take effect up to about 80 ms late.
+- **Not covered:** listening judgement of the run, other devices (a device may not grant
+  `PowerSaving` or may use smaller bursts, which is what the buffer tuner is for), headphones,
+  Bluetooth, calls.
 
 ### How to repeat a battery run
 
@@ -159,11 +189,12 @@ second and, if possible, battery drain.
 2. Unplug the USB cable. Leave the phone untouched and stationary for at least 30 minutes.
 3. Plug it back in and read the record (the app writes it every 10 seconds):
    `adb shell run-as no.onstad.metronom cat files/diagnostics.log`
-4. Check: timestamps continuous (a gap of 11 s is normal), every 10-second interval advances the
-   callback counter by about 5000, `charging=false` and `interactive=false` throughout, the last
-   line is a normal diagnostics line (a `service destroyed` line means the service stopped; no
-   closing line means the system killed the process), and the underrun count stays at or near 0.
-   `doze=true` shows deep Doze was in effect.
+4. Check: timestamps continuous (a gap of 11 s is normal), every 10-second interval advances
+   `delivered` by about 480 000 frames (10 s × 48 kHz), `charging=false` and `interactive=false`
+   throughout, the last line is a normal diagnostics line (a `service destroyed` line means the
+   service stopped; no closing line means the system killed the process), and the underrun count
+   stays at or near 0. `doze=true` shows deep Doze was in effect. (Runs before 2026-10-04 evening
+   have no `delivered` field; use the callback counter for those.)
 5. Stop playback and check it really stopped (no service record, no further diagnostics lines).
    With the phone locked, `adb shell am force-stop no.onstad.metronom` works; the service is not
    exported, so `am stopservice` does not.

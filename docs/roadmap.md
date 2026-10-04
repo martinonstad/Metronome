@@ -18,16 +18,13 @@ until a device is available).
       `./gradlew assembleDebug`)
 - [x] Minimal Compose app: start/stop, tempo ±, beats per bar, diagnostics line
 - [x] Minimal foreground service so playback survives the screen locking
-- [ ] **Go/no-go:** steady click on a physical phone with the screen locked, low-latency stream
-      confirmed in diagnostics, no audible jitter. *Partly met on a Pixel 8 Pro (Android 17):
-      low-latency stream granted, audio callbacks steady for 10 minutes with the screen off, but
-      4 underruns occurred and the run was on USB power. See
-      [testing.md](testing.md#measured-results). Adaptive buffer growth (starting at 4 bursts) is
-      implemented and unit-tested. A 32-minute run on battery, 30 minutes of it in deep Doze,
-      kept the audio thread and service running with no stalls, but still had 4 underruns
-      (the buffer then grew by itself and the next 23 minutes were clean). Remaining: understand
-      or eliminate those underruns (proposed next experiment: `PowerSaving` performance mode)
-      and a listening check.*
+- [ ] **Go/no-go:** steady click on a physical phone with the screen locked, glitch-free
+      stream confirmed in diagnostics, no audible jitter. *Mostly met on a Pixel 8 Pro
+      (Android 17), see [testing.md](testing.md#measured-results): in `PowerSaving` mode a
+      33-minute run on battery (30.5 min in deep Doze) had 0 underruns and 10× fewer CPU
+      wake-ups; the earlier `LowLatency` runs had 4 underruns each. Adaptive buffer growth is
+      implemented and unit-tested. Remaining: a listening check, a longer run using the new
+      `delivered` frame counter, and at least one other device.*
 
 ### M1 — Core in Rust
 
@@ -81,7 +78,8 @@ footswitch or volume-button control, cloud sync, tuner. The file format leaves r
 
 | Risk | Mitigation |
 |---|---|
-| Audio latency and jitter vary between Android devices | Low-latency AAudio, sample-accurate scheduling, M0 go/no-go on a real phone, xrun diagnostics, adjustable buffer |
+| Audio glitches (underruns) vary between Android devices | Power-saving AAudio mode with a large buffer (a metronome does not need low latency), sample-accurate scheduling, a buffer that grows on underruns, M0 go/no-go on a real phone, xrun and delivered-frame diagnostics |
+| Output latency (about 80 ms in power-saving mode) makes the flash appear early | Derive the beat flash from the stream's reported latency (Milestone 2); adjustable visual offset |
 | Blink out of sync with sound | UI derives the beat from the audio clock minus reported latency; adjustable visual offset |
 | OEM battery savers kill background playback | Foreground service with a notification; in-app hint to exempt the app from battery optimisation |
 | Hand-edited files get corrupted or lost | Round-trip-safe parser, defaults plus warnings, atomic writes |
