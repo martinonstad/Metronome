@@ -1,6 +1,7 @@
 package no.onstad.metronom
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -28,6 +29,10 @@ class MainActivity : ComponentActivity() {
   // playback starts either way.
   private val notificationPermission =
     registerForActivityResult(ActivityResultContracts.RequestPermission()) { startPlayback() }
+
+  override fun attachBaseContext(newBase: Context) {
+    super.attachBaseContext(newBase.withDebugOverrides())
+  }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)

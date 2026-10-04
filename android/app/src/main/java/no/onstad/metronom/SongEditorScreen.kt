@@ -2,6 +2,8 @@ package no.onstad.metronom
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,6 +46,7 @@ import uniffi.metronom_ffi.SongRecord
  * Add a song or edit one: title, tempo, beats per bar and notes. [originalTitle] is the song
  * being edited, or `null` for a new one. Leaving without saving discards the changes.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SongEditorScreen(
   store: LibraryStore,
@@ -127,7 +130,11 @@ fun SongEditorScreen(
       )
     }
 
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+    FlowRow(
+      horizontalArrangement = Arrangement.spacedBy(14.dp),
+      verticalArrangement = Arrangement.Center,
+      itemVerticalAlignment = Alignment.CenterVertically,
+    ) {
       Text(stringResource(R.string.beats_per_bar), style = MaterialTheme.typography.bodyMedium)
       NumberStepper(value = beats, range = 1..MAX_BEATS, onChange = { beats = it })
     }

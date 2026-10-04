@@ -113,6 +113,41 @@ The generated Kotlin exception inherits those from `Throwable`, and the build fa
 Use a physical phone for anything involving audio timing, latency or background playback;
 emulators do not reproduce either.
 
+## Release build
+
+`scripts/check-size.sh` builds the release APK (R8 shrinks the code and resources) and fails if it
+is 10 MB or larger; `scripts/test-all.sh` runs it. Without a signing key the APK is unsigned
+(`android/app/build/outputs/apk/release/app-release-unsigned.apk`): good for measuring, not
+installable. At the time of writing it is about 2.4 MB.
+
+**Signing.** The release key is **never in the repository**; the build reads it from environment
+variables. Make your own key once, keep the file and its password safe (a copy somewhere other than
+this Mac), and lose neither: an app signed with a lost key can only be replaced by uninstalling it.
+
+```bash
+keytool -genkeypair -v -keystore ~/metronom-release.jks -alias metronom \
+  -keyalg RSA -keysize 4096 -validity 10000
+```
+
+Then build a signed APK, or an Android App Bundle (what Google Play wants):
+
+```bash
+export METRONOM_KEYSTORE=~/metronom-release.jks
+export METRONOM_KEYSTORE_PASSWORD='…'   # METRONOM_KEY_PASSWORD too, if the key's differs
+export METRONOM_KEY_ALIAS=metronom
+cd android && . ../scripts/env.sh && ./gradlew assembleRelease     # APK, to install by hand
+cd android && . ../scripts/env.sh && ./gradlew bundleRelease       # AAB, for Google Play
+$ANDROID_HOME/build-tools/36.0.0/apksigner verify --verbose android/app/build/outputs/apk/release/app-release.apk
+```
+
+A release build is signed differently from a debug build, so Android will not install one over
+the other: uninstall first (this deletes the app's data; export your library before).
+
+The R8 rules are in `android/app/proguard-rules.pro`. The Rust library is reached through JNA and
+the Kotlin bindings UniFFI generates, which JNA finds by reflection, so those classes are kept.
+After changing them, **install and run a signed release build on a phone**: a shrinking mistake
+only shows up as a crash at run time, not as a build error.
+
 ## Project conventions
 
 - **`metronom-core` has `#![forbid(unsafe_code)]`.** Only `metronom-ffi`'s audio module may use

@@ -15,4 +15,8 @@ echo "== Rust: tests =="
 (cd core && cargo test)
 echo "== Android: debug build (also rebuilds the Rust library and Kotlin bindings) =="
 (cd android && ./gradlew --console=plain --quiet assembleDebug)
+echo "== Android: lint (errors fail; warnings are listed in android/app/build/reports) =="
+(cd android && ./gradlew --console=plain --quiet lintDebug)
+echo "== Android: release build (R8) and size gate: under 10 MB =="
+scripts/check-size.sh
 echo "All checks passed."

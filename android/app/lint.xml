@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- The Kotlin bindings that UniFFI generates (into src/main/java/uniffi, rebuilt on every
+         build) call java.lang.ref.Cleaner, which needs API 33. They check
+         Class.forName("java.lang.ref.Cleaner") first and fall back to JNA's own cleaner on older
+         versions, so the call is safe on API 26 and up. -->
+    <issue id="NewApi">
+        <ignore path="**/uniffi/**" />
+    </issue>
+    <!-- AAPT2 does not find resources in a plain mipmap-anydpi folder, so the icon stays in -v26. -->
+    <issue id="ObsoleteSdkInt">
+        <ignore path="**/mipmap-anydpi-v26/**" />
+    </issue>
+</lint>

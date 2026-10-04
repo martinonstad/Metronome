@@ -12,6 +12,8 @@ captures/
 *.aab
 *.jks
 *.keystore
+*.p12
+*.pem
 android/app/src/main/jniLibs/
 android/app/src/main/java/uniffi/
 

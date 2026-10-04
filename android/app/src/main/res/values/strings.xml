@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">Metronom</string>
     <string name="mode_manual">Manual</string>
-    <string name="bpm">BPM</string>
     <string name="bpm_hint">BPM · tap the number to type</string>
     <string name="tempo_description">Tempo %1$d BPM. Tap to type a tempo.</string>
     <string name="slider_description">Tempo</string>
@@ -87,7 +86,6 @@
         <item quantity="one">%1$d beat</item>
         <item quantity="other">%1$d beats</item>
     </plurals>
-    <string name="tempo_description_fixed">Tempo %1$d BPM</string>
     <string name="gig_next_up">Next: %1$s · %2$d</string>
     <string name="gig_last_song">Last song</string>
     <string name="gig_next">Next song</string>
@@ -131,4 +129,7 @@
     <string name="files_import_action">Import</string>
     <string name="import_done">Import finished</string>
     <string name="import_ignored">Left out of the import</string>
+    <string name="start_refused">Couldn\'t start: another app or a call is using the audio.</string>
+    <string name="start_failed">Couldn\'t start the click: the audio output could not be opened.</string>
+    <string name="gig_position_description">Song %1$d of %2$d</string>
 </resources>
