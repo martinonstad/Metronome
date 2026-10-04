@@ -209,7 +209,13 @@ Planned:
   background ([Android docs](https://developer.android.com/about/versions/17/changes/bg-audio)),
   and it is the right design for earlier versions too.
 - The activity sends start/stop intents and reads state; the notification offers Stop.
-- Audio focus: pause on calls and when another app takes focus.
+- **Interruptions (built):** `PlaybackService` takes audio focus when it starts and **stops
+  itself** (and so removes its notification) when another app or a call takes the audio, when the
+  output is about to change under you (`ACTION_AUDIO_BECOMING_NOISY`, headphones unplugged), and
+  when the engine stops for any reason, such as a lost audio device (a watchdog checks once a
+  second). It never restarts by itself: you press Start. If the focus is refused (a call is
+  active) it does not start and says so. A short interruption that only asks the click to be
+  quieter is left to the system.
 - Min SDK 26 (Android 8.0, required by AAudio). Compile/target SDK 36 for now; revisit 37 with the
   foreground-service work.
 - ABI: arm64-v8a only. 32-bit ARM and x86 devices are not supported.

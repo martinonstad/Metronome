@@ -58,7 +58,7 @@ until a device is available).
       presentation timestamp yet); decide whether that matters
 - [x] Settings screen: sound, volume, flash timing (`visual_offset_ms`), keep-screen-on, stored in
       `settings.md` (see M3 below)
-- [ ] Audio focus, notification controls, keep-screen-on
+- [x] Audio focus, notification controls, keep-screen-on (see M4)
 - [ ] **Done when:** the manual metronome is pleasant to use on the phone and the flash is in
       time with the sound
 
@@ -97,11 +97,36 @@ until a device is available).
 
 ### M4 — Hardening and release build
 
-- [ ] Interruption and permission handling (notifications, audio focus, disconnects)
-- [ ] Accessibility (font scaling, contrast, screen reader labels, flash-safe defaults)
-- [ ] App icon, signed release APK/AAB, R8 shrinking, size gate under 10 MB
+- [x] Interruption and permission handling (notifications, audio focus, disconnects): the click
+      stops, and the service with its notification, when another app or a call takes the audio,
+      when headphones are unplugged and when the audio device goes away; it never restarts by
+      itself. Verified on the Pixel: another app taking the audio, and playback starting with the
+      notification permission denied
+      ([testing.md](testing.md#interruptions-and-accessibility-on-the-pixel-8-pro-manual-2026-10-04-debug-build)).
+      **Not yet tried (needs hardware or your hands):** headphones unplugged, a Bluetooth device
+      disconnecting, a real call, and the notification itself with the permission granted
+- [x] Accessibility, first pass: screen-reader labels for the −/+ buttons, the song position and
+      the song-list strip; the new song is announced when you press Next (a live region); touch
+      targets of at least 48 dp; the manual and gig screens fit at the largest font setting and
+      scroll instead of clipping on a small screen; large numerals keep a sensible size. Checked
+      by screenshots at 2× text, on a small screen and in the light theme. **Not done:** a walk-through with TalkBack
+      switched on, and a measured contrast check
+- [x] Flash safety assessed (see testing.md): the flash is a thin bar and small dots, well below
+      the area at which flashing counts as a risk, even at 300 BPM (5 flashes a second); there is
+      no option to turn the flash off
+- [x] App icon (a metronome, adaptive and themed), R8 shrinking with the JNA/UniFFI keep rules,
+      signing from environment variables (no key in the repository), size gate under 10 MB in
+      `scripts/test-all.sh` (the release APK is 2.4 MB), lint in `scripts/test-all.sh`. A signed
+      release build was installed on the Pixel and run: the library opens, a song is saved,
+      playback starts and stops, and the export works
+      ([testing.md](testing.md#the-release-build-on-the-pixel-8-pro-2026-10-05)). **Not done:**
+      your own release key (see [development.md](development.md#release-build)), and a
+      bundle (`bundleRelease`) was not built
 - [ ] Full [on-device checklist](testing.md#on-device-timing-checklist-physical-android-phone) passes
-- [ ] Consider targeting API 37 (Android 17 background-audio rules)
+- [ ] Consider targeting API 37 (Android 17 background-audio rules): the platform is available
+      from `sdkmanager` (`platforms;android-37.0`) but is not installed here and the app still
+      targets 36; the foreground service is in place. Decision pending (it needs a download and a
+      re-test)
 
 ### M5 — iPhone app
 

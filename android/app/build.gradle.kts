@@ -17,10 +17,28 @@ android {
         ndk { abiFilters += "arm64-v8a" }
     }
 
+    // Release signing comes from the environment, so no key or password is ever in the repository
+    // (see docs/development.md). Without it `assembleRelease` makes an unsigned APK, which is
+    // enough to check the size but cannot be installed.
+    fun signing(name: String) = providers.environmentVariable(name).orNull
+    val keystore = signing("METRONOM_KEYSTORE")
+    if (keystore != null) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(keystore)
+                storePassword = signing("METRONOM_KEYSTORE_PASSWORD")
+                keyAlias = signing("METRONOM_KEY_ALIAS")
+                keyPassword = signing("METRONOM_KEY_PASSWORD") ?: signing("METRONOM_KEYSTORE_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.findByName("release")
         }
     }
     compileOptions {

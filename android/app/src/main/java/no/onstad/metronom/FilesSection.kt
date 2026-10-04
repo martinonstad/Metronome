@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import java.io.ByteArrayOutputStream
@@ -57,6 +58,7 @@ private class PickedArchive(val name: String, val bytes: ByteArray)
 @Composable
 internal fun FilesSection(store: LibraryStore, onMessage: (String) -> Unit) {
   val context = LocalContext.current
+  val resources = LocalResources.current
   val scope = rememberCoroutineScope()
   var busy by remember { mutableStateOf(false) }
   var pendingExport by remember { mutableStateOf<ByteArray?>(null) }
@@ -72,9 +74,9 @@ internal fun FilesSection(store: LibraryStore, onMessage: (String) -> Unit) {
           busy = true
           try {
             writeTo(context, uri, bytes)
-            onMessage(context.getString(R.string.files_exported))
+            onMessage(resources.getString(R.string.files_exported))
           } catch (e: IOException) {
-            onMessage(context.getString(R.string.files_write_failed, e.message ?: ""))
+            onMessage(resources.getString(R.string.files_write_failed, e.message ?: ""))
           }
           busy = false
         }
@@ -89,12 +91,12 @@ internal fun FilesSection(store: LibraryStore, onMessage: (String) -> Unit) {
           try {
             val bytes = readFrom(context, uri)
             if (bytes == null) {
-              onMessage(context.getString(R.string.files_too_large))
+              onMessage(resources.getString(R.string.files_too_large))
             } else {
               picked = PickedArchive(displayName(context, uri), bytes)
             }
           } catch (e: IOException) {
-            onMessage(context.getString(R.string.files_read_failed, e.message ?: ""))
+            onMessage(resources.getString(R.string.files_read_failed, e.message ?: ""))
           }
           busy = false
         }

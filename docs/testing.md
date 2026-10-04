@@ -194,6 +194,62 @@ Bluetooth delay is unknown), a zip near the size limits, the picker with a cloud
 Drive, and an export while the storage is full. Not judged: how the Settings screen feels, and
 whether the explanations are clear to someone who has not seen them.
 
+### Interruptions and accessibility on the Pixel 8 Pro (manual, 2026-10-04, debug build)
+
+Driven through the real app with adb and screenshots.
+
+| Check | Result |
+|---|---|
+| Start with the notification permission **denied** (the system dialog answered "Don't allow") | Playback starts anyway (foreground service running, the button reads Stop); only the notification is not shown |
+| Another app takes the audio while the click runs (the Files app plays a WAV) | The log says "Audio focus lost (-1); stopping"; the service ends and the Start button returns |
+| Font scale 2.0 (forced for this app only by a debug-only file; the phone's own setting is untouched) | Manual, gig, setlists and setlist-editor screens show everything; the tempo numeral keeps its size |
+| Font scale 2.0 on a 317 dp-wide, about 690 dp-tall screen (density 1.3) | The gig screen still fits completely; the manual screen scrolls (Start is one scroll away), the top buttons wrap onto two lines and the beats stepper onto two lines: **found and fixed**, before the fix "Settings" broke letter by letter and the + button was clipped |
+| Light theme (forced for this app only) | Manual and gig screens are legible with good contrast |
+| Screen-reader labels (read from the accessibility tree, not by TalkBack) | The −/+ buttons for tempo and beats, the song position ("Song 1 of 2") and the song-list strip all have descriptions; the tempo number is a button |
+| Numeral size | Found: Android 14 and later scale big text less than linearly, so the first helper made the tempo number *smaller* at 2× text. **Fixed:** the size is now worked out in pixels, never below the normal size and at most 1.3× |
+
+**Flash safety (an estimate, not a certified assessment).** The flash is a 14 dp-high bar across the
+width of the screen and dots of 15–22 dp. On this phone the bar is about 2 × 65 mm, roughly
+150 mm²; the area at which web-content guidelines count flashing as a general-flash risk
+(0.006 steradian) is about 500 mm² at a 30 cm viewing distance. The flash is therefore below that area
+even at 300 BPM (5 flashes a second, more than the usual limit of three). There is no setting to turn
+the flash off; if someone needs that, it is a small addition.
+
+**Not tested, needs hardware or your hands:** unplugging wired headphones or a Bluetooth device
+disconnecting (the "becoming noisy" stop and the lost-device stop are written but have not been
+seen to fire), an incoming call (the refusal to start during a call), the notification and its
+Stop action with the permission granted (not looked at in this session), a TalkBack walk-through
+(TalkBack was not switched on, since that is a system setting), screen rotation, and a long run
+with the new "engine watchdog" (it only ran a few minutes; the aim is that it never stops a healthy click).
+
+### The release build on the Pixel 8 Pro (2026-10-05)
+
+A **signed release build** (a throwaway key made for this test and kept outside the repository)
+was installed on the phone, which first meant uninstalling the debug build. Driven with adb.
+
+| Check | Result |
+|---|---|
+| Size | 2.38 MB (the limit is 10 MB). Unsigned and signed builds are the same size to within 10 KB |
+| `apksigner verify` | Verifies (APK Signature Scheme v2) |
+| Start the app, open the song list | The library opens through JNA and the UniFFI bindings after R8 shrinking: "0 songs", **no crash** (the first worry with R8) |
+| Add a song | Saved; the list shows it |
+| Start (notification permission denied) and Stop | The foreground service runs and the audio engine starts; it was still running after 8 s; Stop ends it |
+| Export | Saved a valid zip with `songs.md` |
+| Afterwards | The release build was removed, the debug build reinstalled and the test library put back |
+
+**Not checked:** how the new launcher icon looks on the phone's own launcher (only a drawing of
+the same shapes in a circular mask was looked at), a `bundleRelease` build, and a release build on any
+phone other than the Pixel 8 Pro.
+
+**Lint** (`./gradlew lintDebug`, now part of `scripts/test-all.sh`): 0 errors. Findings fixed: four
+`context.getString` calls in a Composable (now `LocalResources`), unused strings. Findings
+not changed: the UniFFI-generated bindings call `java.lang.ref.Cleaner` (API 33) but check for the class first and
+fall back to JNA's own cleaner on older versions, so lint is told to skip that check for the
+generated package; the manifest says `allowBackup="true"` with the template's backup rule files
+not wired up (see the decision in the milestone notes); newer versions exist of the Android Gradle plugin,
+the Compose BOM and some libraries. The app has only been run on Android 17 (API 37); it is
+built for 26 and up, and nothing older has been tried.
+
 ### Beat flash timing (manual, 2026-10-04, Pixel 8 Pro, debug build, `PowerSaving` mode)
 
 The screen's frame loop calls `visual_state` once per display frame and, in debug builds, logs

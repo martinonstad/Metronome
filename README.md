@@ -47,7 +47,7 @@ See [docs/design.md](docs/design.md) for the reasoning.
 | **M1** Core in Rust | Done. Engine (65 tests) and the markdown library: songs table, setlists, settings, zip export/import ([file format](docs/file-format.md); 145 library tests). Not yet connected to the app |
 | **M2** Android main screen | Built and checked on the phone with adb; judging the flash by eye and settings are still to do |
 | **M3** Library and gig mode | In progress. The library is exposed to the app; all its screens are built and work on the phone: songs, setlists, the gig screen (one tap for the next song while the click keeps running), settings, and export/import of a zip. Not yet judged by hand: how it feels in use, and a transfer to a second physical phone |
-| **M4** Hardening + release build | Not started |
+| **M4** Hardening + release build | In progress. Interruptions, a first accessibility pass, the app icon, the release build (2.4 MB) and lint are done. Still to do: the on-device checklist with headphones, Bluetooth and a call, a TalkBack walk-through, and your own signing key |
 | **M5** iPhone app | Not started (needs Xcode) |
 
 Everything measured so far comes from one phone, a Pixel 8 Pro running Android 17; the iPhone
