@@ -8,11 +8,12 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering::Relaxed};
 
-use metronom_core::engine::{Controls, Engine};
+use metronom_core::engine::{Controls, Engine, Timeline};
+use metronom_core::sync;
 use metronom_core::tuning::BufferTuner;
 use ndk::audio::{
     AudioCallbackResult, AudioDirection, AudioError, AudioFormat, AudioPerformanceMode,
-    AudioSharingMode, AudioStream, AudioStreamBuilder,
+    AudioSharingMode, AudioStream, AudioStreamBuilder, Clockid,
 };
 
 const CHANNELS: usize = 2;
@@ -53,7 +54,11 @@ fn describe(error: AudioError) -> String {
 impl Output {
     /// `sample_rate` should be the device's native rate so AAudio can use its low-latency
     /// path without resampling; 0 means 48 kHz.
-    pub fn open(controls: Arc<Controls>, sample_rate: u32) -> Result<Self, String> {
+    pub fn open(
+        controls: Arc<Controls>,
+        timeline: Arc<Timeline>,
+        sample_rate: u32,
+    ) -> Result<Self, String> {
         let rate = if sample_rate == 0 {
             DEFAULT_SAMPLE_RATE
         } else {
@@ -63,7 +68,7 @@ impl Output {
         let callback_health = Arc::clone(&health);
         let error_health = Arc::clone(&health);
 
-        let mut engine = Engine::new(rate as f32);
+        let mut engine = Engine::with_timeline(rate as f32, timeline);
         let mut chunk = [0.0f32; CHUNK_FRAMES];
         // Created on the first callback, when the stream's burst and capacity are known. The
         // callback is the only place that sets the buffer size, so nothing can race with it.
@@ -102,11 +107,11 @@ impl Output {
                 let out = unsafe {
                     std::slice::from_raw_parts_mut(data.cast::<f32>(), frames * CHANNELS)
                 };
-                let timing = controls.timing();
-                let volume = controls.volume();
+                // One consistent snapshot per callback: tempo, signature, accents, sound, volume.
+                let settings = controls.settings();
                 for block in out.chunks_mut(CHUNK_FRAMES * CHANNELS) {
                     let n = block.len() / CHANNELS;
-                    engine.render(&mut chunk[..n], timing, volume);
+                    engine.render(&mut chunk[..n], &settings);
                     let frames = block.as_chunks_mut::<CHANNELS>().0.iter_mut();
                     for (frame, sample) in frames.zip(&chunk[..n]) {
                         frame.fill(*sample);
@@ -126,6 +131,28 @@ impl Output {
         stream.request_start().map_err(describe)?;
 
         Ok(Self { stream, health })
+    }
+
+    pub fn sample_rate(&self) -> f64 {
+        f64::from(self.stream.sample_rate())
+    }
+
+    /// Frames handed to the stream so far.
+    pub fn frames_written(&self) -> i64 {
+        self.stream.frames_written()
+    }
+
+    /// The stream frame reaching the speaker at `now_nanos` (the `System.nanoTime()` /
+    /// `CLOCK_MONOTONIC` clock), from the stream's presentation timestamp. `None` until the
+    /// system can report one.
+    pub fn heard_frame(&self, now_nanos: i64) -> Option<i64> {
+        let anchor = self.stream.timestamp(Clockid::Monotonic).ok()?;
+        Some(sync::heard_frame(
+            anchor.frame_position,
+            anchor.time_nanoseconds,
+            now_nanos,
+            self.sample_rate(),
+        ))
     }
 
     pub fn is_disconnected(&self) -> bool {

@@ -1,9 +1,23 @@
 <resources>
     <string name="app_name">Metronom</string>
+    <string name="mode_manual">Manual</string>
     <string name="bpm">BPM</string>
+    <string name="bpm_hint">BPM · tap the number to type</string>
+    <string name="tempo_description">Tempo %1$d BPM. Tap to type a tempo.</string>
+    <string name="slider_description">Tempo</string>
+    <string name="slower">Slower</string>
+    <string name="faster">Faster</string>
     <string name="beats_per_bar">Beats per bar</string>
+    <string name="fewer_beats">Fewer beats</string>
+    <string name="more_beats">More beats</string>
+    <string name="tap">Tap tempo</string>
     <string name="start">Start</string>
     <string name="stop">Stop</string>
     <string name="playing">Playing</string>
     <string name="playback_channel">Playback</string>
+    <string name="enter_tempo">Enter a tempo</string>
+    <string name="tempo_error">Enter a tempo from 30 to 300</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="beat_of">Beat %1$d of %2$d</string>
 </resources>

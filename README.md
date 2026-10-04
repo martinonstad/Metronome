@@ -1,17 +1,17 @@
 # Metronom
 
-A small, offline metronome for Android (iPhone later). Tempo and time signature are quick to
-change, the beat is played **and** flashed on screen, and everything you save — settings, songs,
-setlists, band/project groups — is a plain markdown file you can edit by hand and move to a new
-phone.
+A small, offline metronome for Android (iPhone later), built for gigs. Set the tempo and beats
+per bar on one screen, see the beat flash in time with the click, and step through a setlist with
+one tap per song. Everything you save — settings, songs, setlists — is a plain markdown file you
+can edit by hand and move to a new phone.
 
-> **Status: early development (Milestone 0 of 5).** The metronome engine is written and tested
-> on the development machine, and a minimal Android app (start/stop, tempo, beats per bar,
-> foreground service) builds and has been run on one phone (a Pixel 8 Pro): the audio stream
-> keeps running for 30+ minutes with the screen off, including in deep Doze on battery. With the
-> power-saving audio mode there were no underruns in a 33-minute run (the low-latency mode had
-> four per run). This is one run on one phone, and a listening check is still outstanding. The
-> markdown library and the iPhone app are not built yet. See [Status](#status) and the [roadmap](docs/roadmap.md).
+> **Status: early development.** The engine is written and well tested, the audio has been
+> measured on one phone (a Pixel 8 Pro: steady for 30+ minutes with the screen off, including in
+> deep Doze on battery, with no underruns in the power-saving mode), and the one-screen main
+> screen is built and its controls work on the phone (whether the flash looks in time with the
+> click is still for a human to judge). The song/setlist library, gig mode and the
+> iPhone app are not built yet. The design was agreed on 2026-10-04: see [docs/design.md](docs/design.md).
+> Progress is in the [roadmap](docs/roadmap.md).
 
 ## Goals
 
@@ -19,36 +19,39 @@ phone.
 - **Accurate.** Beats are placed on exact audio sample positions, so there is no drift and no
   jitter from UI timers. The blink is derived from the audio clock, so it stays locked to the
   sound.
-- **Your data is yours.** Settings, songs, setlists and projects are markdown files with a tiny
-  front-matter header. Edit them in any text editor; export/import moves them as a zip.
+- **Your data is yours.** Settings, songs and setlists are markdown files: songs in one table,
+  one file per setlist. Edit them in any text editor; export/import moves them as a zip.
 - **Small and reliable.** Rust for everything that matters (timing, files); thin native UIs.
   Target: release APK under 10 MB, sounds synthesized in code (no audio assets).
 
-## Planned features (v1)
+## Features
 
-| Area | Features |
+| Area | What it does |
 |---|---|
-| Metronome | Tempo 20–400 BPM, tap tempo, time signatures (1–16 over 2/4/8/16), subdivisions, per-beat accents (strong / normal / muted), count-in, 4 built-in sounds, volume |
-| Visual | Beat flash in three styles (full screen, edge glow, beat dots), adjustable intensity, optional haptic tick, visual-latency offset for Bluetooth |
-| Library | Projects (bands) containing songs and setlists; a preset is simply a song; setlist performance mode with big Next/Previous |
-| Files | Everything stored as markdown; in-app "edit as markdown"; export/import as a zip |
+| Metronome | One screen, no scrolling. Tempo 30–300 BPM: tap the number to type it, or use the slider, −/+ or tap tempo. Beats per bar 1–99; the first beat of each bar is accented. Four synthesized sounds, volume |
+| Visual | A flash bar and one dot per beat, driven by the audio clock so they line up with what you hear |
+| Library | Every song in one list; setlists tagged with a band/project; create, edit, delete, reorder and copy in the app |
+| Gig mode | Pick a setlist, then **Next song** is one tap; the click keeps running and switches tempo on the next beat. Jump to any song from a list |
+| Files | Everything stored as markdown; export/import as a zip |
 | Phone | Plays with the screen locked (foreground service), pauses on calls, optional keep-screen-on |
 
-Not in v1: tempo changes inside a song, tempo ramps, polyrhythms, footswitch control, cloud sync.
+Deliberately left out: count-in, subdivisions, time-signature denominators, per-beat accents,
+per-setlist tempo overrides, extra flash styles. Possible later: foot pedal / volume-key control.
+See [docs/design.md](docs/design.md) for the reasoning.
 
 ## Status
 
 | Milestone | State |
 |---|---|
-| **M0** Setup + audio spike | In progress. Repo, toolchain, scripts, Rust engine (with tests), Android audio output and a minimal Android app that builds are done. The on-device latency check on a phone is the remaining go/no-go |
-| **M1** Core: engine + markdown store | Engine done; markdown store and the [file format](docs/file-format.md) are specified but not implemented |
-| **M2** Android metronome screen | Not started |
-| **M3** Android library (projects, songs, setlists, export/import) | Not started |
+| **M0** Setup + audio spike | Done except a listening check and a second device: the audio is steady and glitch-free on one phone (see [testing](docs/testing.md#measured-results)) |
+| **M1** Core in Rust | Engine done (65 tests). Markdown store, library logic and zip export/import are specified ([file format](docs/file-format.md)) but not implemented |
+| **M2** Android main screen | Built and checked on the phone with adb; judging the flash by eye and settings are still to do |
+| **M3** Library and gig mode | Not started |
 | **M4** Hardening + release build | Not started |
 | **M5** iPhone app | Not started (needs Xcode) |
 
-Nothing has been verified on a physical device yet; timing and background-playback claims in
-these docs describe the design, not measured results.
+Everything measured so far comes from one phone, a Pixel 8 Pro running Android 17; the iPhone
+side is unverified.
 
 ## Quick start (development)
 
@@ -76,7 +79,7 @@ you. To use the toolchain in your own shell: `. scripts/env.sh`.
 | `core/metronom-ffi` | UniFFI interface the UIs call, plus the platform audio output (Android AAudio today) |
 | `android/` | Android app: Kotlin + Jetpack Compose. Gradle builds the Rust library and Kotlin bindings automatically |
 | `ios/` | iPhone app: SwiftUI (later milestone) |
-| `docs/` | Architecture, file format, development guide, testing, roadmap |
+| `docs/` | Design, architecture, file format, development guide, testing, roadmap |
 | `testdata/` | Sample libraries for tests |
 | `scripts/` | `doctor.sh`, `test-all.sh`, `env.sh` |
 
@@ -84,6 +87,7 @@ you. To use the toolchain in your own shell: `. scripts/env.sh`.
 
 | Document | What it covers |
 |---|---|
+| [docs/design.md](docs/design.md) | The agreed screens, behaviour and decisions (what the app does and does not do) |
 | [docs/architecture.md](docs/architecture.md) | Stack, layers, timing and audio design, visual sync, decisions and rejected alternatives |
 | [docs/file-format.md](docs/file-format.md) | The markdown file format (the contract between the app and your files) |
 | [docs/development.md](docs/development.md) | Toolchain setup, build and run, troubleshooting |
