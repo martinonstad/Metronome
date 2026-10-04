@@ -186,9 +186,23 @@ length (a rotation, or returning from another screen). The screen is kept awake 
 (`keep_screen_on` in `settings.md`). The flash bar, beat dots and the per-frame beat state are
 shared with the manual screen (`BeatVisuals.kt`).
 
+The **settings screen** holds the sound (click, wood, beep, rim), the volume, the flash timing and
+keep-awake, and the **export and import** of your files. `LibraryStore` keeps the settings as
+Compose state and tells the app when they change, and `MetronomApp` applies sound and volume to
+the shared `Metronome` (at launch and on every change), so they hold whatever screen or service
+is running. A slider changes the click while you drag and is saved when you let go (volume in
+whole percent, flash timing in steps of 10 ms). Keep-awake applies to the gig screen and to the
+manual screen while the click runs.
+
+Export builds the zip first and only then asks where to save it (Android's file picker,
+`CreateDocument`), so a failure never leaves an empty file. Import reads the chosen file (at most
+25 MB), asks what to do with songs, setlists and settings that already exist, runs the all-or-nothing
+import in Rust and shows a report. On a fresh install (settings never changed) "replace" is
+preselected for the settings. Every outcome and error is shown in a dialog, because a message at
+the bottom of a scrolling screen was easy to miss.
+
 Planned:
 
-- The settings screen and the export/import screens ([roadmap.md](roadmap.md), Milestone 3).
 - The `Metronome` object lives in the `Application` and is owned by a **foreground service**
   (`mediaPlayback` type) so playback survives the screen locking and the activity going away.
   Apps that target Android 17 (API 37) must run a foreground service to play audio in the
@@ -218,8 +232,11 @@ speaker well after the engine renders it (190–240 ms in power-saving mode on t
 4. **Display**: `Metronome::visual_state(now_nanos)` is called once per display frame with the
    Compose frame time (the same monotonic clock). The UI draws the flash from `since_ms` with a
    fast decay; the first beat of the bar flashes brighter.
-5. A user setting, `visual_offset_ms`, will shift the result to correct for Bluetooth headphones
-   or any systematic error in the reported timestamps (planned, not built).
+5. The user setting `visual_offset_ms` shifts the result to correct for Bluetooth headphones or
+   any systematic error in the reported timestamps (built). Positive values show the flash *later*:
+   `visual_state` is asked for the beat that was heard that many milliseconds ago. A negative
+   value shows it earlier, but never earlier than the engine has prepared the click (about the
+   output latency). Whether a given offset matches a real Bluetooth delay is not yet tested.
 
 The whole chain except the platform timestamp is pure Rust, tested on the host. The flash is a
 bar across the top plus one dot per beat; other flash styles were considered and are not wanted.

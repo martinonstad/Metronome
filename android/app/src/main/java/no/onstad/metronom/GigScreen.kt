@@ -78,25 +78,24 @@ fun GigScreen(
 ) {
   val runningState = rememberRunning(metronome)
   val running by runningState
-  val beatState = rememberBeatState(metronome, running)
+  val beatState = rememberBeatState(metronome, running, store.settings.visualOffsetMs)
 
   var detail by remember { mutableStateOf<SetlistDetail?>(null) }
   var loaded by remember { mutableStateOf(false) }
-  var keepScreenOn by remember { mutableStateOf(true) }
   var showList by remember { mutableStateOf(false) }
 
   LaunchedEffect(stem, store.revision, store.state) {
     if (store.state is LibraryStore.State.Ready) {
       detail = store.read { it.setlist(stem) }
-      keepScreenOn = store.read { it.settings().keepScreenOn } ?: true
       loaded = true
     }
   }
 
   // Keep the display awake while the setlist is open, so it can be read from the music stand.
   val view = LocalView.current
-  DisposableEffect(keepScreenOn) {
-    view.keepScreenOn = keepScreenOn
+  val keepAwake = store.settings.keepScreenOn
+  DisposableEffect(keepAwake) {
+    view.keepScreenOn = keepAwake
     onDispose { view.keepScreenOn = false }
   }
 

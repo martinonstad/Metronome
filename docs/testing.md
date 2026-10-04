@@ -156,6 +156,44 @@ Two things in the debug beat log look odd but are the logger, not the click: it 
 the beat *number* changes (a new bar that begins with beat 0 right after a beat 0 prints nothing, so
 one gap looks twice as long), and a screen that starts it prints the current beat again.
 
+### The settings and the export / import screens on the Pixel 8 Pro (manual, 2026-10-04, debug build)
+
+Driven through the real app with adb. The export and import went through Android's own file
+picker. Test zips were made on the Mac (with the Mac's `zip`, wrapped in a `Metronom/` folder,
+with `.DS_Store` and `__MACOSX` junk) and a small script (a zip with a `../evil.md` entry, and a
+text file named `.zip`). The debug diagnostics line under the Start button shows the sound and
+volume the audio engine actually has.
+
+| Check | Result |
+|---|---|
+| Open the Settings screen when there is no `settings.md` yet (songs and setlists already exist) | Defaults shown (Click, 80 %, 0 ms, keep screen on); **no `settings.md` is written until something is changed** |
+| Choose Wood | `settings.md` is created with `sound: wood` and the header, heading and other keys as written by the app |
+| Volume slider, tapped to about 50 % | First saved as `0.49887767`: **fixed**, it is now rounded to whole percent and the file reads `0.5` (also `0.38`) |
+| Flash timing slider to +100 ms | `visual_offset_ms: 100`; the Reset button sets it back to 0 |
+| Cold start of the app | The engine has WOOD and volume 0.50 straight away (the diagnostics line says so) |
+| Choose Beep on the Settings screen, go back | The diagnostics line says BEEP |
+| Flash offset +100 ms and −100 ms with the click running | The beat log shows `offsetMs=100` / `-100` and the displayed beat still changes on every beat (with −100 too). The log's "age" is relative to the shifted time, so it **does not prove the flash looks later or earlier**; that needs eyes and ears |
+| Keep-awake switch off / on | `keep_screen_on` is written; the screen is held only while the click runs and the switch is on (`mHoldScreenWindow`) |
+| **Export** | Android's picker opens with `Metronom-2026-10-04.zip`; after Save a dialog says "Saved…"; the 1 053-byte file is a valid zip for the system `unzip`, with `settings.md`, `songs.md` and both setlists **identical to the files on the phone** |
+| **Import** of the Mac-made zip, default options | Report: "Songs: 1 added, 2 already there, yours kept. Setlists: 1 added, 1 added next to yours (hand-written → hand-written-2). Settings: yours kept." plus "Left out of the import: Metronom/.DS_Store, __MACOSX/._x (system file)"; my Superstition (100) stayed; the clashing setlist file is untouched; the new files are as in the zip |
+| Same zip, all three set to Replace | "Songs: 3 replaced. Setlists: 2 replaced. Settings: replaced"; Superstition is 110, the setlist and the sound (rim, 0.3) are the zip's; the new settings are in effect at once |
+| Cancel in the options dialog | Nothing changes (all files compared) |
+| Zip with a `../evil.md` entry | A dialog: "the zip file contains an unsafe path ("../evil.md") and was not imported"; **all files unchanged** (md5 over the library) |
+| A text file named `.zip` | A dialog: "this is not a zip file"; nothing changed |
+| A refusal shown as a line under the buttons | **Found and fixed:** the message appeared at the very bottom of the scrolling screen, half off-screen, and looked like "nothing happened". Every outcome is now a dialog |
+| **A fresh install**: export, wipe the app's data (`pm clear`), import the zip | The app starts with 0 songs and 0 setlists; the import options preselect Replace for the settings only (nothing was ever changed); afterwards `settings.md` and all four setlist files are **byte for byte** the same as before, the songs have the same data, and the sound and volume are applied (WOOD, 0.60) |
+
+**Known difference:** an import rebuilds the song table in the app's own layout. After the
+fresh-install round trip `songs.md` had the same songs but `Notes` before `Beats` and right-aligned numbers instead
+of the original table; extra columns or text around a hand-made table are not carried over by an
+import (see [file-format.md](file-format.md#export-and-import)). The setlists and settings are
+copied exactly.
+
+Not tested: a second physical phone, Bluetooth headphones (so the flash timing against a real
+Bluetooth delay is unknown), a zip near the size limits, the picker with a cloud provider such as
+Drive, and an export while the storage is full. Not judged: how the Settings screen feels, and
+whether the explanations are clear to someone who has not seen them.
+
 ### Beat flash timing (manual, 2026-10-04, Pixel 8 Pro, debug build, `PowerSaving` mode)
 
 The screen's frame loop calls `visual_state` once per display frame and, in debug builds, logs
@@ -172,7 +210,7 @@ What this shows: the pipeline from audio timeline to display frame is correct an
 far as the stream's own timestamps are concerned**. What it does *not* show: whether those
 timestamps match what the speaker really does. That can only be judged by looking and
 listening: **does the flash appear together with the click, or early or late?** If it is
-consistently off, the planned `visual_offset_ms` setting corrects it. The latency readings
+consistently off, the `visual_offset_ms` setting (Settings screen) corrects it. The latency readings
 varied by about ±25 ms between samples, so some flash jitter may be visible; this is unjudged.
 
 ## Planned suites

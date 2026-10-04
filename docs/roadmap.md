@@ -56,7 +56,8 @@ until a device is available).
 - [ ] Judge by hand: does the flash line up with the click, how do the targets feel with a real
       finger, and does tap tempo work. The first beat of a run is shown about 80 ms late (no
       presentation timestamp yet); decide whether that matters
-- [ ] Settings: sound and volume, keep-screen-on, visual offset (stored in `settings.md`)
+- [x] Settings screen: sound, volume, flash timing (`visual_offset_ms`), keep-screen-on, stored in
+      `settings.md` (see M3 below)
 - [ ] Audio focus, notification controls, keep-screen-on
 - [ ] **Done when:** the manual metronome is pleasant to use on the phone and the flash is in
       time with the sound
@@ -78,9 +79,21 @@ until a device is available).
       ([testing.md](testing.md#the-gig-screen-on-the-pixel-8-pro-manual-2026-10-04-debug-build));
       still to judge by hand: how it feels at a real rehearsal, and in bright light or on a stand.
       `last_setlist` in `settings.md` is not used yet (the app does not reopen the setlist on launch)
-- [ ] Export / import as zip
-- [ ] **Done when:** you can build a setlist, walk through it with one tap per song while the
-      click keeps running, export the library and import it on another install
+- [x] Settings screen: sound (click, wood, beep, rim), volume, flash timing, keep the screen on.
+      Saved at once; sound and volume reach the audio engine at launch and when changed. Keep-awake
+      also applies on the manual screen while the click runs. Run on the Pixel with adb, files
+      read off the phone and the beat log
+      ([testing.md](testing.md#the-settings-and-the-export--import-screens-on-the-pixel-8-pro-manual-2026-10-04-debug-build));
+      **not judged:** whether a flash timing of a given size lines up with the sound by eye, and
+      whether it can correct Bluetooth headphones (none were connected)
+- [x] Export / import as zip: export saves the whole library through Android's file picker;
+      import asks what to do with songs, setlists and settings that already exist and then shows a
+      report. Refusals (unsafe paths, not a zip) change nothing and say why
+- [x] **Done when:** you can build a setlist, walk through it with one tap per song while the
+      click keeps running, export the library and import it on another install. **Done on one
+      phone:** the library was exported, the app's data wiped (a fresh install) and the zip
+      imported; the setlists and settings came back byte for byte, the songs with the same data
+      in the app's own table layout. **Not tried:** a second physical device
 
 ### M4 — Hardening and release build
 

@@ -58,9 +58,12 @@ class MainActivity : ComponentActivity() {
           metronome = metronome,
           onStart = ::onStartRequested,
           onStop = ::stopPlayback,
+          settings = library.settings,
           onOpenSongs = { screen = Screen.Songs },
           onOpenSetlists = { screen = Screen.Setlists },
+          onOpenSettings = { screen = Screen.Settings },
         )
+      Screen.Settings -> SettingsScreen(store = library, metronome = metronome, onBack = { screen = Screen.Manual })
       Screen.Setlists ->
         SetlistsScreen(
           store = library,
