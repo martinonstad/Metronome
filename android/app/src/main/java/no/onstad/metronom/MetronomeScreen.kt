@@ -22,6 +22,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.getValue
@@ -32,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -42,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import uniffi.metronom_ffi.Metronome
+import uniffi.metronom_ffi.SettingsRecord
 
 /**
  * The manual metronome, all on one screen: the beat flash and dots, the tempo (tap the number to
@@ -52,8 +55,10 @@ fun MetronomeScreen(
   metronome: Metronome,
   onStart: () -> Unit,
   onStop: () -> Unit,
+  settings: SettingsRecord,
   onOpenSongs: () -> Unit,
   onOpenSetlists: () -> Unit,
+  onOpenSettings: () -> Unit,
 ) {
   val runningState = rememberRunning(metronome)
   val running by runningState
@@ -73,12 +78,20 @@ fun MetronomeScreen(
     refresh()
   }
 
-  val beatState = rememberBeatState(metronome, running)
+  val beatState = rememberBeatState(metronome, running, settings.visualOffsetMs)
+
+  // Keep the display awake while the click is running (the `keep_screen_on` setting).
+  val view = LocalView.current
+  val keepAwake = running && settings.keepScreenOn
+  DisposableEffect(keepAwake) {
+    view.keepScreenOn = keepAwake
+    onDispose { view.keepScreenOn = false }
+  }
 
   // Debug builds show the audio diagnostics under the Start button.
   LaunchedEffect(debuggable) {
     while (debuggable) {
-      diagnostics = metronome.diagnostics()
+      diagnostics = "${metronome.diagnostics()} | ${metronome.sound()} vol ${"%.2f".format(metronome.volume())}"
       delay(500)
     }
   }
@@ -87,24 +100,21 @@ fun MetronomeScreen(
     modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 24.dp, vertical = 12.dp),
     horizontalAlignment = Alignment.CenterHorizontally,
   ) {
-    Box(Modifier.fillMaxWidth()) {
-      TextButton(onClick = onOpenSongs, modifier = Modifier.align(Alignment.CenterStart)) {
-        Text(stringResource(R.string.songs))
-      }
-      TextButton(onClick = onOpenSetlists, modifier = Modifier.align(Alignment.CenterEnd)) {
-        Text(stringResource(R.string.setlists))
-      }
-      Text(
-        stringResource(R.string.mode_manual),
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSecondaryContainer,
-        modifier =
-          Modifier.align(Alignment.Center)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.secondaryContainer)
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-      )
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+      TextButton(onClick = onOpenSongs) { Text(stringResource(R.string.songs)) }
+      TextButton(onClick = onOpenSetlists) { Text(stringResource(R.string.setlists)) }
+      Spacer(Modifier.weight(1f))
+      TextButton(onClick = onOpenSettings) { Text(stringResource(R.string.settings)) }
     }
+    Text(
+      stringResource(R.string.mode_manual),
+      style = MaterialTheme.typography.labelLarge,
+      color = MaterialTheme.colorScheme.onSecondaryContainer,
+      modifier =
+        Modifier.clip(CircleShape)
+          .background(MaterialTheme.colorScheme.secondaryContainer)
+          .padding(horizontal = 16.dp, vertical = 4.dp),
+    )
     Spacer(Modifier.height(14.dp))
     FlashBar(beatState)
     Spacer(Modifier.height(14.dp))

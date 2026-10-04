@@ -12,9 +12,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uniffi.metronom_ffi.BandGroup
 import uniffi.metronom_ffi.LibraryException
+import uniffi.metronom_ffi.SettingsRecord
 import uniffi.metronom_ffi.SongLibrary
 import uniffi.metronom_ffi.SongRecord
+import uniffi.metronom_ffi.Sound
 import uniffi.metronom_ffi.WarningRecord
+
+/** The settings of a library whose `settings.md` has never been changed (the same defaults as in Rust). */
+internal val DEFAULT_SETTINGS = SettingsRecord(Sound.CLICK, 0.8f, true, 0, null)
 
 /** The result of a change: the value, or a message the screen can show. */
 sealed interface Outcome<out T> {
@@ -27,9 +32,15 @@ sealed interface Outcome<out T> {
  * Owns the song library for the screens. The library lives in Rust and saves every change at
  * once; this class opens it off the main thread, runs every call on a background thread, and
  * keeps the lists the screens show as Compose state. A change that has started always finishes
- * and refreshes the lists, even if the screen that asked for it is already gone.
+ * and refreshes the lists, even if the screen that asked for it is already gone. [onSettings] is
+ * told the settings once the library is open and whenever they change, so the app can apply them
+ * (sound, volume) wherever they live.
  */
-class LibraryStore(private val root: File, private val scope: CoroutineScope) {
+class LibraryStore(
+  private val root: File,
+  private val scope: CoroutineScope,
+  private val onSettings: (SettingsRecord) -> Unit = {},
+) {
   sealed interface State {
     data object Opening : State
 
@@ -45,6 +56,10 @@ class LibraryStore(private val root: File, private val scope: CoroutineScope) {
 
   /** Every song, in file order. */
   var songs: List<SongRecord> by mutableStateOf(emptyList())
+    private set
+
+  /** The settings from `settings.md` (the defaults until the library has opened). */
+  var settings: SettingsRecord by mutableStateOf(DEFAULT_SETTINGS)
     private set
 
   /** The setlists grouped by band (alphabetical, setlists without a band last). */
@@ -70,10 +85,13 @@ class LibraryStore(private val root: File, private val scope: CoroutineScope) {
         val songList = opened.songs()
         val groups = opened.setlistsByBand()
         val warningList = opened.warnings()
+        val settingsNow = opened.settings()
         library = opened
         withContext(Dispatchers.Main) {
           songs = songList
           setlistGroups = groups
+          settings = settingsNow
+          onSettings(settingsNow)
           warnings = warningList
           state = State.Ready
         }
@@ -97,9 +115,14 @@ class LibraryStore(private val root: File, private val scope: CoroutineScope) {
         val value = block(lib)
         val songList = lib.songs()
         val groups = lib.setlistsByBand()
+        val settingsNow = lib.settings()
         withContext(Dispatchers.Main) {
           songs = songList
           setlistGroups = groups
+          if (settingsNow != settings) {
+            settings = settingsNow
+            onSettings(settingsNow)
+          }
           revision++
         }
         Outcome.Ok(value)
@@ -107,6 +130,12 @@ class LibraryStore(private val root: File, private val scope: CoroutineScope) {
         Outcome.Failed(describe(e))
       }
     }
+
+  /** Change the settings and save them at once. */
+  suspend fun updateSettings(transform: (SettingsRecord) -> SettingsRecord): Outcome<Unit> {
+    val updated = transform(settings)
+    return change { it.updateSettings(updated) }
+  }
 
   /** Run a read-only query off the main thread; `null` while the library is still opening. */
   suspend fun <T> read(block: (SongLibrary) -> T): T? =

@@ -46,7 +46,7 @@ See [docs/design.md](docs/design.md) for the reasoning.
 | **M0** Setup + audio spike | Done except a listening check and a second device: the audio is steady and glitch-free on one phone (see [testing](docs/testing.md#measured-results)) |
 | **M1** Core in Rust | Done. Engine (65 tests) and the markdown library: songs table, setlists, settings, zip export/import ([file format](docs/file-format.md); 145 library tests). Not yet connected to the app |
 | **M2** Android main screen | Built and checked on the phone with adb; judging the flash by eye and settings are still to do |
-| **M3** Library and gig mode | In progress. The library is exposed to the app; the songs, setlists and gig screens (one tap for the next song while the click keeps running) are built and work on the phone. Settings and export/import screens are next |
+| **M3** Library and gig mode | In progress. The library is exposed to the app; all its screens are built and work on the phone: songs, setlists, the gig screen (one tap for the next song while the click keeps running), settings, and export/import of a zip. Not yet judged by hand: how it feels in use, and a transfer to a second physical phone |
 | **M4** Hardening + release build | Not started |
 | **M5** iPhone app | Not started (needs Xcode) |
 

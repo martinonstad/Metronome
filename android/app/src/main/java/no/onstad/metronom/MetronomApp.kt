@@ -15,7 +15,12 @@ class MetronomApp : Application() {
 
   /** Songs, setlists and settings, kept as markdown files in the app's private folder. */
   val library: LibraryStore by lazy {
-    LibraryStore(File(filesDir, "Metronom"), CoroutineScope(SupervisorJob() + Dispatchers.Default))
+    LibraryStore(File(filesDir, "Metronom"), CoroutineScope(SupervisorJob() + Dispatchers.Default)) {
+      // The click's sound and volume live in the shared Metronome, so they apply whatever screen
+      // (or the playback service) is running.
+      metronome.setSound(it.sound)
+      metronome.setVolume(it.volume)
+    }
   }
 
   override fun onCreate() {

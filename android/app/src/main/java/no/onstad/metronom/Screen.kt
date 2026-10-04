@@ -11,6 +11,9 @@ sealed interface Screen {
 
   data object Setlists : Screen
 
+  /** Sound, volume, flash offset, keep-awake, and export/import of your files. */
+  data object Settings : Screen
+
   /** Playing a setlist; [stem] is the setlist's file name without `.md`. */
   data class Gig(val stem: String) : Screen
 
@@ -27,6 +30,7 @@ sealed interface Screen {
         Manual -> null
         Songs -> Manual
         Setlists -> Manual
+        Settings -> Manual
         is EditSetlist -> Setlists
         is Gig -> Manual
         is EditSong -> Songs
@@ -41,6 +45,7 @@ val ScreenSaver =
         Screen.Manual -> "manual"
         Screen.Songs -> "songs"
         Screen.Setlists -> "setlists"
+        Screen.Settings -> "settings"
         is Screen.EditSetlist -> "setlist:${it.stem}"
         is Screen.Gig -> "gig:${it.stem}"
         is Screen.EditSong -> if (it.title == null) "new" else "edit:${it.title}"
@@ -50,6 +55,7 @@ val ScreenSaver =
       when {
         it == "songs" -> Screen.Songs
         it == "setlists" -> Screen.Setlists
+        it == "settings" -> Screen.Settings
         it.startsWith("gig:") -> Screen.Gig(it.removePrefix("gig:"))
         it.startsWith("setlist:") -> Screen.EditSetlist(it.removePrefix("setlist:"))
         it == "new" -> Screen.EditSong(null)

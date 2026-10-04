@@ -47,7 +47,7 @@ Edit the values above. Unknown keys are kept.
 | `sound` | `click` `wood` `beep` `rim` | `click` | The click sound |
 | `volume` | 0.0 – 1.0 | `0.8` | Output level |
 | `keep_screen_on` | boolean | `true` | Keep the display awake while a setlist is open or playing |
-| `visual_offset_ms` | −500 – 500 | `0` | Shift the flash relative to the sound (Bluetooth or timing correction) |
+| `visual_offset_ms` | −500 – 500 | `0` | Shift the flash relative to the sound (Bluetooth or timing correction). **Positive shows the flash later**, which is what to use when the flash comes before the sound; negative shows it earlier |
 | `last_setlist` | setlist file name (no `.md`) | none | Setlist reopened on launch |
 
 ### Header syntax (also used by setlists)

@@ -19,6 +19,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -37,6 +38,8 @@ import uniffi.metronom_ffi.SongRecord
 
 /** Beats shown as dots; a longer bar shows a "Beat n of m" label instead. */
 private const val MAX_DOTS = 16
+
+private const val NANOS_PER_MS = 1_000_000L
 
 /** How quickly the flash fades after a beat becomes audible. */
 private const val FLASH_DECAY_MS = 90f
@@ -79,10 +82,16 @@ internal fun rememberRunning(metronome: Metronome): State<Boolean> {
  * frame time on the same monotonic clock the audio system uses, so the flash is locked to the
  * sound the speaker is playing, not to a timer. Only draw/layer code should read this state, so
  * the screen does not recompose every frame.
+ *
+ * [offsetMs] is the `visual_offset_ms` setting: the flash is shown that many milliseconds *later*
+ * than the sound is heard (negative: earlier, but never earlier than the click has been prepared,
+ * which is about the output latency). It is applied by asking for the beat that was heard that
+ * long ago.
  */
 @Composable
-internal fun rememberBeatState(metronome: Metronome, running: Boolean): State<BeatState?> {
+internal fun rememberBeatState(metronome: Metronome, running: Boolean, offsetMs: Int): State<BeatState?> {
   val beatState = remember { mutableStateOf<BeatState?>(null) }
+  val offset by rememberUpdatedState(offsetMs)
   val debuggable = (LocalContext.current.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
   LaunchedEffect(running) {
     if (!running) {
@@ -92,13 +101,16 @@ internal fun rememberBeatState(metronome: Metronome, running: Boolean): State<Be
     var lastBeat: UInt? = null
     while (true) {
       withFrameNanos { now ->
-        val state = metronome.visualState(now)
+        val state = metronome.visualState(now - offset * NANOS_PER_MS)
         beatState.value = state
         // Debug builds: when the displayed beat changes, log how old it already was on the first
         // frame that showed it. A correct pipeline keeps that between 0 and one frame.
         if (debuggable && state != null && state.beat != lastBeat) {
           lastBeat = state.beat
-          Log.d("MetronomFlash", "frame=${now / 1_000} us beat=${state.beat} sinceMs=${"%.2f".format(state.sinceMs)}")
+          Log.d(
+            "MetronomFlash",
+            "frame=${now / 1_000} us beat=${state.beat} sinceMs=${"%.2f".format(state.sinceMs)} offsetMs=$offset",
+          )
         }
       }
     }
