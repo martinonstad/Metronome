@@ -6,6 +6,7 @@
 #![forbid(unsafe_code)]
 
 pub mod engine;
+pub mod library;
 pub mod sync;
 pub mod tap;
 pub mod tuning;

@@ -9,8 +9,8 @@ can edit by hand and move to a new phone.
 > measured on one phone (a Pixel 8 Pro: steady for 30+ minutes with the screen off, including in
 > deep Doze on battery, with no underruns in the power-saving mode), and the one-screen main
 > screen is built and its controls work on the phone (whether the flash looks in time with the
-> click is still for a human to judge). The song/setlist library, gig mode and the
-> iPhone app are not built yet. The design was agreed on 2026-10-04: see [docs/design.md](docs/design.md).
+> click is still for a human to judge). The song/setlist library exists in the core and is
+> tested, but no screens use it yet; gig mode and the iPhone app are not built. The design was agreed on 2026-10-04: see [docs/design.md](docs/design.md).
 > Progress is in the [roadmap](docs/roadmap.md).
 
 ## Goals
@@ -44,7 +44,7 @@ See [docs/design.md](docs/design.md) for the reasoning.
 | Milestone | State |
 |---|---|
 | **M0** Setup + audio spike | Done except a listening check and a second device: the audio is steady and glitch-free on one phone (see [testing](docs/testing.md#measured-results)) |
-| **M1** Core in Rust | Engine done (65 tests). Markdown store, library logic and zip export/import are specified ([file format](docs/file-format.md)) but not implemented |
+| **M1** Core in Rust | Done. Engine (65 tests) and the markdown library: songs table, setlists, settings, zip export/import ([file format](docs/file-format.md); 145 library tests). Not yet connected to the app |
 | **M2** Android main screen | Built and checked on the phone with adb; judging the flash by eye and settings are still to do |
 | **M3** Library and gig mode | Not started |
 | **M4** Hardening + release build | Not started |

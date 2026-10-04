@@ -192,15 +192,39 @@ bar across the top plus one dot per beat; other flash styles were considered and
 measurement restarts after a 2 s pause or a clock that goes backwards, and the result is
 clamped to 30–300 BPM.
 
-## Storage (planned)
+## Library and storage (built in the core; not yet connected to the app)
 
-Markdown files in the app's private storage, behind a small storage interface (read, write,
-list, delete) so a visible/shared folder can be added later without touching the parser. The
-layout is `settings.md`, one `songs.md` table holding every song, and one file per setlist in
-`setlists/`, each tagged with a band/project. Export/import moves a zip of the same layout.
-Details and rules are in [file-format.md](file-format.md); the screens that edit these files are
-in [design.md](design.md). All logic (parsing, renaming a song everywhere it is used, reordering,
-copying) lives in `metronom-core` so both platforms behave identically.
+Located in `core/metronom-core/src/library/`, pure Rust, no OS dependencies. The layout is
+`settings.md`, one `songs.md` table holding every song, and one file per setlist in `setlists/`,
+each tagged with a band/project. Rules are in [file-format.md](file-format.md); the screens that
+edit these files are in [design.md](design.md).
+
+| Piece | File | Role |
+|---|---|---|
+| `Library` | `mod.rs` | The one object the app talks to: open from storage, change in memory, save. Songs (add, edit, delete), setlists (create, rename, change band, add/remove/reorder songs, copy, delete), queries (bands, grouping, missing songs, which setlists use a song), settings. A song rename and a song delete are applied to every setlist. Warnings from reading are returned, never fatal |
+| `Storage` | `storage.rs` | A four-method trait (read, write, delete, list) so the library never touches the OS directly. `MemStorage` for tests, `FsStorage` for a folder on disk: it writes a temporary file, flushes it and renames it into place, so a crash cannot leave a half-written file. Paths are validated (no `..`, no absolute paths) |
+| `Document` / `Header` | `header.rs` | The optional `---` header: read and edit `key: value` lines while every other byte is preserved (unknown keys, comments, spacing, the delimiter lines) |
+| `SongsDoc` | `songs.rs` | The song table: finds the first table with `Song` and `BPM` columns, edits rows without touching the text around it, extra columns or untouched cells; keeps rows it does not manage |
+| `SetlistDoc` | `setlist.rs` | One setlist file: heading, `band`, and the first list as the song list; edits rewrite only the list |
+| `SettingsDoc` | `settings.rs` | `settings.md`: reads and validates the values, writes only the keys that changed |
+| `archive` | `archive.rs`, `zip.rs` | Export/import as a zip. A small purpose-written zip reader and writer (stored and deflate, via `miniz_oxide`), strict limits and path checks, conflict choices |
+
+Design points:
+
+- **Edit what you own, preserve the rest.** Every parser keeps the original text and re-renders
+  only what the app changed. For untouched files the output is the input, byte for byte; a
+  property test checks this for arbitrary text in each file type.
+- **Safe by default.** A file that is not valid text is never overwritten; a settings file from a
+  newer version is read but not changed; a failed save leaves the files already written intact
+  and the rest pending; an import that is refused changes nothing.
+- **Deterministic.** Setlists are kept in file-name order whether just created or just loaded, so
+  the library looks the same before and after a save (a property test found a case where it did
+  not).
+- **Identity.** A setlist's file name (its "stem") is its identity and never changes on rename;
+  songs are identified by title, compared ignoring case and surrounding spaces.
+- **Tested hard.** A model-based test runs random sessions of add / edit / delete / reorder /
+  copy / save-and-reopen and checks the rules (unique titles, no missing songs, save/reopen
+  equals memory) after every step.
 
 ## Build and size
 

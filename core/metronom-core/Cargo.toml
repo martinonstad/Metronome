@@ -8,3 +8,9 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+# Inflate for imported zip files (pure Rust, no unsafe); output size is capped by the caller.
+miniz_oxide = { version = "0.9", default-features = false, features = ["with-alloc"] }
+
+[dev-dependencies]
+proptest = "1"
+tempfile = "3"

@@ -32,14 +32,19 @@ until a device is available).
 - [x] Engine: sample-accurate beats, accented first beat, four synthesized sounds, tap tempo,
       buffer tuning, the beat timeline and clock sync (65 core tests, including a one-hour drift
       test)
-- [ ] Markdown store for the agreed [file format](file-format.md): `settings.md`, the `songs.md`
+- [x] Markdown store for the agreed [file format](file-format.md): `settings.md`, the `songs.md`
       table, `setlists/*.md`; round-trip safe (unknown keys, extra columns, surrounding text),
       atomic writes
-- [ ] Library logic: create/edit/delete songs and setlists, rename a song everywhere it is used,
-      reorder, copy a setlist, detect missing songs, unique titles
-- [ ] Zip export/import with zip-slip protection
-- [ ] Parser fuzz/property tests
-- [ ] **Done when:** `cargo test` is green and [file-format.md](file-format.md) matches the code
+- [x] Library logic: create/edit/delete songs and setlists, rename a song everywhere it is used,
+      delete a song from every setlist, reorder, copy a setlist, detect missing songs, unique
+      titles
+- [x] Zip export/import with zip-slip protection and size limits, tested against the real `zip`
+      and `unzip`
+- [x] Property tests: arbitrary text round-trips byte for byte in every parser; random library
+      sessions keep the rules and survive a save and reopen
+- [x] **Done when:** `cargo test` is green and [file-format.md](file-format.md) matches the code.
+      *Done (145 library tests). Not yet reachable from the app: the FFI layer and the screens
+      that use it are Milestone 3.*
 
 ### M2 — Android main screen
 

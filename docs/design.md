@@ -100,7 +100,8 @@ added later.
   song to edit it; "Add song" creates one.
 - **Song editor:** title, tempo (number and slider), beats per bar, optional notes. Save, delete,
   and "Play this song now" (loads it into the manual screen).
-- **Delete** asks for confirmation and warns if a setlist uses the song.
+- **Delete** asks for confirmation and says which setlists use the song; **deleting removes it
+  from all of them** (so no setlist is left with a missing song).
 - Song titles are unique (compared ignoring case).
 
 ### Setlists
@@ -123,6 +124,8 @@ added later.
 | Phone locked or app in the background | Playback continues (foreground service with a notification) |
 | Audio device disappears (headphones unplugged) | Playback stops; Start reopens it |
 | A song is renamed | Every setlist that uses it is updated |
+| A song is deleted | It is removed from every setlist that uses it, after you confirm |
+| A setlist is renamed | Only its heading changes; its file name stays the same |
 | A setlist names a song that does not exist (hand-edited file) | Shown as a missing song and kept in the file; never deleted automatically |
 | Changing tempo while playing | Takes effect from the next beat; a beat is never shortened or doubled |
 
