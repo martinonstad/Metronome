@@ -79,4 +79,20 @@
     <string name="remove_from_setlist">Remove %1$s from the setlist</string>
     <string name="in_setlist_times">×%1$d in this setlist</string>
     <string name="songs_missing">%1$d missing</string>
+    <string name="gig_position">%1$d / %2$d</string>
+    <string name="setlist_gone">That setlist no longer exists.</string>
+    <string name="gig_nothing_to_play">There is no song to play in this setlist yet.</string>
+    <string name="edit_setlist">Edit setlist</string>
+    <plurals name="beats_count">
+        <item quantity="one">%1$d beat</item>
+        <item quantity="other">%1$d beats</item>
+    </plurals>
+    <string name="tempo_description_fixed">Tempo %1$d BPM</string>
+    <string name="gig_next_up">Next: %1$s · %2$d</string>
+    <string name="gig_last_song">Last song</string>
+    <string name="gig_next">Next song</string>
+    <string name="gig_end">End of setlist</string>
+    <string name="gig_previous">Previous song</string>
+    <string name="gig_song_list">Song list</string>
+    <string name="gig_open_list">Open the song list</string>
 </resources>

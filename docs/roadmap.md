@@ -72,8 +72,12 @@ until a device is available).
       songs (move up/down), copy, delete. Run on the Pixel with adb, files read off the phone
       ([testing.md](testing.md#the-setlists-screens-on-the-pixel-8-pro-manual-2026-10-04-debug-build));
       still to judge by hand: how the screens feel, and dragging to reorder (move up/down only for now)
-- [ ] Gig screen: current song, one-tap Next and a small Previous, song list to jump to any song,
-      switching between manual and setlist modes
+- [x] Gig screen: current song, one-tap Next and a small Previous, song list (tap the strip or
+      swipe up) to jump to any song, screen kept awake, Back to the manual screen. Run on the
+      Pixel with adb and the beat log
+      ([testing.md](testing.md#the-gig-screen-on-the-pixel-8-pro-manual-2026-10-04-debug-build));
+      still to judge by hand: how it feels at a real rehearsal, and in bright light or on a stand.
+      `last_setlist` in `settings.md` is not used yet (the app does not reopen the setlist on launch)
 - [ ] Export / import as zip
 - [ ] **Done when:** you can build a setlist, walk through it with one tap per song while the
       click keeps running, export the library and import it on another install

@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -45,6 +46,9 @@ class MainActivity : ComponentActivity() {
     val metronome = metronomApp.metronome
     val library = metronomApp.library
     var screen: Screen by rememberSaveable(stateSaver = ScreenSaver) { mutableStateOf(Screen.Manual) }
+    // Where you are in the setlist being played; kept so the same setlist resumes at its song.
+    var gigStem by rememberSaveable { mutableStateOf<String?>(null) }
+    var gigIndex by rememberSaveable { mutableIntStateOf(0) }
 
     BackHandler(enabled = screen.parent != null) { screen = screen.parent ?: Screen.Manual }
 
@@ -61,7 +65,29 @@ class MainActivity : ComponentActivity() {
         SetlistsScreen(
           store = library,
           onBack = { screen = Screen.Manual },
-          onOpen = { screen = Screen.EditSetlist(it) },
+          onPlay = { stem ->
+            if (stem != gigStem) {
+              gigStem = stem
+              gigIndex = 0
+            }
+            screen = Screen.Gig(stem)
+          },
+          onEdit = { screen = Screen.EditSetlist(it) },
+        )
+      is Screen.Gig ->
+        GigScreen(
+          metronome = metronome,
+          store = library,
+          stem = current.stem,
+          index = if (gigStem == current.stem) gigIndex else 0,
+          onIndexChange = {
+            gigStem = current.stem
+            gigIndex = it
+          },
+          onStart = ::onStartRequested,
+          onStop = ::stopPlayback,
+          onBack = { screen = Screen.Manual },
+          onEdit = { screen = Screen.EditSetlist(current.stem) },
         )
       is Screen.EditSetlist ->
         SetlistEditorScreen(
@@ -83,9 +109,7 @@ class MainActivity : ComponentActivity() {
           onClose = { screen = Screen.Songs },
           onPlay = { song ->
             // Load the song into the manual metronome; the new bar starts on the next beat.
-            metronome.setBpm(song.bpm)
-            metronome.setBeatsPerBar(song.beats)
-            metronome.restartBar()
+            metronome.load(song)
             screen = Screen.Manual
           },
         )
