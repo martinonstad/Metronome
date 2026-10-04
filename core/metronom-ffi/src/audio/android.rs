@@ -9,6 +9,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering::Relaxed};
 
 use metronom_core::engine::{Controls, Engine};
+use metronom_core::tuning::BufferTuner;
 use ndk::audio::{
     AudioCallbackResult, AudioDirection, AudioError, AudioFormat, AudioPerformanceMode,
     AudioSharingMode, AudioStream, AudioStreamBuilder,
@@ -18,6 +19,16 @@ const CHANNELS: usize = 2;
 const DEFAULT_SAMPLE_RATE: u32 = 48_000;
 /// Frames rendered per engine call; a larger AAudio buffer is processed in several chunks.
 const CHUNK_FRAMES: usize = 1024;
+/// A metronome is not interactive, so it does not need the low-latency path. Power saving uses
+/// larger hardware bursts and far fewer CPU wake-ups, which suits long sessions with the screen
+/// off. The visual flash stays in sync because it uses the stream's reported latency. (The first
+/// device runs used `LowLatency`: 500 wake-ups a second and four underruns per run.)
+const PERFORMANCE_MODE: AudioPerformanceMode = AudioPerformanceMode::PowerSaving;
+/// Starting buffer, in hardware bursts (about 8 ms on a 2 ms burst). A metronome is not
+/// interactive, so this latency is inaudible and buys resistance to scheduling hiccups.
+const INITIAL_BURSTS: i32 = 4;
+/// The buffer may grow this far when the device keeps underrunning.
+const MAX_BURSTS: i32 = 12;
 
 #[derive(Default)]
 struct Health {
@@ -54,16 +65,36 @@ impl Output {
 
         let mut engine = Engine::new(rate as f32);
         let mut chunk = [0.0f32; CHUNK_FRAMES];
+        // Created on the first callback, when the stream's burst and capacity are known. The
+        // callback is the only place that sets the buffer size, so nothing can race with it.
+        let mut tuner: Option<BufferTuner> = None;
 
         let stream = AudioStreamBuilder::new()
             .map_err(describe)?
             .direction(AudioDirection::Output)
-            .performance_mode(AudioPerformanceMode::LowLatency)
+            .performance_mode(PERFORMANCE_MODE)
             .sharing_mode(AudioSharingMode::Shared)
             .format(AudioFormat::PCM_Float)
             .channel_count(CHANNELS as i32)
             .sample_rate(rate as i32)
-            .data_callback(Box::new(move |_stream, data, frames| {
+            .data_callback(Box::new(move |stream, data, frames| {
+                // Start with a roomy buffer and grow it whenever the device underruns (see
+                // `BufferTuner`). Both stream calls are cheap and allowed in the callback.
+                let tuner = tuner.get_or_insert_with(|| {
+                    let tuner = BufferTuner::new(
+                        stream.frames_per_burst(),
+                        stream.buffer_capacity_in_frames(),
+                        MAX_BURSTS,
+                    );
+                    let _ = stream.set_buffer_size_in_frames(tuner.initial_size(INITIAL_BURSTS));
+                    tuner
+                });
+                if let Some(size) =
+                    tuner.observe(stream.x_run_count(), || stream.buffer_size_in_frames())
+                {
+                    let _ = stream.set_buffer_size_in_frames(size);
+                }
+
                 let frames = usize::try_from(frames).unwrap_or(0);
                 // SAFETY: AAudio hands us `frames` frames of `CHANNELS` interleaved f32
                 // samples (the format requested above). The buffer is valid and exclusively
@@ -92,10 +123,6 @@ impl Output {
             .open_stream()
             .map_err(describe)?;
 
-        // Two bursts is the usual low-latency starting point; `xruns` in the diagnostics
-        // shows whether it needs to grow on a given device.
-        let burst = stream.frames_per_burst();
-        let _ = stream.set_buffer_size_in_frames(burst * 2);
         stream.request_start().map_err(describe)?;
 
         Ok(Self { stream, health })
@@ -108,7 +135,8 @@ impl Output {
     pub fn diagnostics(&self) -> String {
         let s = &self.stream;
         format!(
-            "{:?}, {:?}, {} Hz, burst {}, buffer {}/{} frames, xruns {}, callbacks {}, {:?}",
+            "{:?}, {:?}, {} Hz, burst {}, buffer {}/{} frames, xruns {}, callbacks {}, \
+             delivered {}, {:?}",
             s.performance_mode(),
             s.sharing_mode(),
             s.sample_rate(),
@@ -117,6 +145,7 @@ impl Output {
             s.buffer_capacity_in_frames(),
             s.x_run_count(),
             self.health.callbacks.load(Relaxed),
+            s.frames_written(),
             s.state(),
         )
     }

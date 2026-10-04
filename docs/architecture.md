@@ -72,17 +72,17 @@ The audio callback must never wait. In the engine and the Android callback:
   eighth-note pulses per minute. Accent patterns express compound grouping (e.g. `X o o X o o`).
 - Ranges: 20–400 BPM, 1–16 beats per bar. Out-of-range input is clamped, never rejected.
 
-## Audio output on Android (built, not yet run on a device)
+## Audio output on Android (built, tested on one device)
 
 `core/metronom-ffi/src/audio/android.rs`, using the `ndk` crate's AAudio bindings.
 
 | Setting | Value | Why |
 |---|---|---|
 | Direction / format | Output, 32-bit float, 2 channels (mono click duplicated) | Float avoids conversion; stereo is the safest universally supported layout |
-| Performance mode | Low latency | Requests the fast audio path |
-| Sharing mode | Shared | Exclusive can fail on some devices; shared still uses the fast path on modern Android |
+| Performance mode | **Power saving** | A metronome is not interactive, so it does not need low latency. Power saving uses larger hardware bursts and about a tenth of the CPU wake-ups (on the Pixel 8 Pro: about 50 callbacks a second instead of 500). Measured on that phone: 0 underruns in 32 minutes on battery, versus 4 underruns per run with low latency (see [testing.md](testing.md#measured-results)). The cost is about 80 ms of output latency, which the visual flash must compensate for |
+| Sharing mode | Shared | Exclusive can fail on some devices, and nothing here needs it |
 | Sample rate | The device's native rate, passed in by the Kotlin side (`AudioManager`) | Avoids resampling, which adds latency; falls back to 48 kHz |
-| Buffer size | Two bursts after opening | The usual low-latency starting point; the diagnostics line reports xruns so it can be raised per device |
+| Buffer size | Starts at 4 bursts (never more than the stream's capacity); grows by one burst each time the device underruns, up to 12 bursts | An underrun is an audible glitch; a few extra milliseconds are not. In power-saving mode on the Pixel 8 Pro the burst is 1922 frames (40 ms) and the buffer starts at its 3844-frame capacity (80 ms), so the tuner has no room to grow there; it matters on devices that grant smaller bursts, and it was exercised with the low-latency mode (buffer 384 → 576 frames after an underrun) |
 
 - **Disconnection.** If the stream errors (headphones unplugged, device switched), an atomic flag
   is set. `Metronome::is_running()` then reports `false`, and `start()` reopens the stream.
@@ -90,8 +90,20 @@ The audio callback must never wait. In the engine and the Android callback:
   buffer AAudio hands to the callback as a slice, and marking the stream handle `Send` (AAudio
   streams are documented as thread-safe; the `ndk` crate omits `Send` only because it holds a raw
   handle).
+- **Buffer tuning.** The policy lives in `metronom-core` (`tuning.rs`, `BufferTuner`) so it is
+  tested on the host. The audio callback owns buffer sizing: on its first call it reads the
+  stream's burst and capacity, sets the starting size, then once per callback compares the
+  stream's underrun count and requests a larger buffer when it has risen. Doing it all in the
+  callback avoids a race with `open()` that could briefly shrink a buffer that had just grown.
 - **Diagnostics.** `Metronome::diagnostics()` returns one line (performance mode, sharing, rate,
-  burst, buffer, xruns, callbacks, state) for the on-device timing check.
+  burst, buffer, xruns, callbacks, delivered frames, state) for the on-device timing check.
+  `delivered` is the total number of frames handed to the stream: it should advance by the
+  sample rate per second, which is the direct proof that audio is continuous. (Callback counts
+  are not: in power-saving mode callbacks carry roughly 980–1000 frames and their size varies.)
+  In debug builds the Android service also logs the line every 2 s and appends a timestamped
+  line to `files/diagnostics.log` every 10 s, together with the phone's Doze, interactive and
+  charging state and the battery percentage, so a run on battery leaves evidence without a USB
+  connection.
 - On other platforms a stub `Output` returns an error from `start()`, so the workspace builds and
   tests on a Mac or Linux.
 
@@ -117,7 +129,7 @@ symbols. The exported interface is identical on every target.
 
 ## Android app (spike built; features planned)
 
-Built (Milestone 0 spike, builds but not yet run on a phone): `MetronomApp` holds the single
+Built (Milestone 0 spike, run on a Pixel 8 Pro; see [testing.md](testing.md#measured-results)): `MetronomApp` holds the single
 `Metronome`; `PlaybackService` owns playback; `MainActivity` and `MetronomeScreen` offer
 start/stop, tempo ±1/±5, beats per bar and a diagnostics line. Everything else below is planned.
 
