@@ -9,6 +9,11 @@ sealed interface Screen {
 
   data object Songs : Screen
 
+  data object Setlists : Screen
+
+  /** The setlist editor; [stem] is the setlist's file name without `.md`. */
+  data class EditSetlist(val stem: String) : Screen
+
   /** The song editor; [title] is the song being edited, or `null` for a new song. */
   data class EditSong(val title: String?) : Screen
 
@@ -18,6 +23,8 @@ sealed interface Screen {
       when (this) {
         Manual -> null
         Songs -> Manual
+        Setlists -> Manual
+        is EditSetlist -> Setlists
         is EditSong -> Songs
       }
 }
@@ -29,12 +36,16 @@ val ScreenSaver =
       when (it) {
         Screen.Manual -> "manual"
         Screen.Songs -> "songs"
+        Screen.Setlists -> "setlists"
+        is Screen.EditSetlist -> "setlist:${it.stem}"
         is Screen.EditSong -> if (it.title == null) "new" else "edit:${it.title}"
       }
     },
     restore = {
       when {
         it == "songs" -> Screen.Songs
+        it == "setlists" -> Screen.Setlists
+        it.startsWith("setlist:") -> Screen.EditSetlist(it.removePrefix("setlist:"))
         it == "new" -> Screen.EditSong(null)
         it.startsWith("edit:") -> Screen.EditSong(it.removePrefix("edit:"))
         else -> Screen.Manual

@@ -99,6 +99,31 @@ Driven through the real app with adb, reading the files straight off the phone
 Not judged: how the screens feel and look with a real finger (button sizes, spacing, the empty
 state), and anything on the iPhone.
 
+### The setlists screens on the Pixel 8 Pro (manual, 2026-10-04, debug build)
+
+Driven through the real app with adb, reading the files off the phone. The test data was four
+songs and one hand-written `setlists/hand-written.md` (band `Hand Band`, a lowercase
+`superstition`, a song that is not in the library, and the note "Soundcheck at 18:00.").
+
+| Check | Result |
+|---|---|
+| Open the list and then the editor without changing anything | Grouped under "Hand Band", "3 songs" and "1 missing"; the missing song is shown as "Not in your song list". **The files are byte-identical afterwards** (md5) |
+| Move a song up | The file's list is renumbered in the new order; the header, the heading, the lowercase `superstition` and the note are unchanged |
+| Add songs from the picker (Sweet Child, Hotel California, Sweet Child again) | The picker stays open and shows "×1 in this setlist", then "×2"; the file gets three new lines; a song can appear twice |
+| Remove the missing song | Gone from the screen and the file |
+| Edit name to "Friday Gig" and band to "The Band" | Only `band:` and the `# heading` change; **the file name stays `hand-written.md`** |
+| Copy from the editor | The copy opens ("Friday Gig (copy)"); `hand-written-copy.md` has the same songs and keeps the note |
+| New setlist "Wedding", band "Duo" | Opens its editor; `wedding.md` holds just the band and the heading; the list now has two groups |
+| New setlist with a blank name | "Enter a name." and nothing is created; a band chip fills the band field |
+| Delete the copy from the list | A confirmation names the setlist and says the songs stay; Cancel leaves the file, Delete removes it |
+| Rename a song that is used twice in a setlist | Both lines in the setlist file and the songs table are updated |
+| Delete a song used in a setlist | The dialog says "It will also be removed from: • Friday Gig (×1)"; the setlist file and the counts on the list ("4 songs") are updated |
+| System Back | Editor → list → main screen |
+
+Not tested: screen rotation and the app being recreated while a setlist is open, a setlist whose
+file is changed by hand while the app is open, and long lists (hundreds of songs). Not judged:
+how the screens feel with a real finger, and reordering by dragging (only move up/down exists).
+
 ### Beat flash timing (manual, 2026-10-04, Pixel 8 Pro, debug build, `PowerSaving` mode)
 
 The screen's frame loop calls `visual_state` once per display frame and, in debug builds, logs

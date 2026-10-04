@@ -55,6 +55,20 @@ class MainActivity : ComponentActivity() {
           onStart = ::onStartRequested,
           onStop = ::stopPlayback,
           onOpenSongs = { screen = Screen.Songs },
+          onOpenSetlists = { screen = Screen.Setlists },
+        )
+      Screen.Setlists ->
+        SetlistsScreen(
+          store = library,
+          onBack = { screen = Screen.Manual },
+          onOpen = { screen = Screen.EditSetlist(it) },
+        )
+      is Screen.EditSetlist ->
+        SetlistEditorScreen(
+          store = library,
+          stem = current.stem,
+          onBack = { screen = Screen.Setlists },
+          onOpen = { screen = Screen.EditSetlist(it) },
         )
       Screen.Songs ->
         SongsScreen(
