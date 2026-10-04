@@ -13,7 +13,14 @@ This runs `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, the 
 cross-compiled for Android (so the Android-only audio code is checked too) and `cargo test`.
 Android and iPhone suites will be added to the same script as those milestones land.
 
-## What exists today (20 tests)
+## What exists today (29 tests)
+
+### `metronom-core` — buffer tuning (9 tests)
+
+Never grows without underruns; grows by exactly one burst per new underrun; the same count is
+not counted twice; a burst of underruns grows one step at a time; stops at the maximum and at
+the stream's capacity; AAudio error codes (negative counts) are ignored; the stream's current
+size is only queried when growth is needed; degenerate inputs do not panic.
 
 ### `metronom-core` — engine (17 tests)
 
@@ -66,6 +73,60 @@ again before each release. Use `Metronome::diagnostics()` (shown in the app) for
 Record the device model, Android version and results of each run in the pull request or issue
 for the milestone. Results from one phone do not generalise to all phones, so note which devices
 have been tried.
+
+## Measured results
+
+### Pixel 8 Pro, Android 17 (API 37), debug build — 2026-10-04
+
+Milestone 0 spike, 48 kHz. **The phone was connected to the computer by USB (charging) for every
+run below.** Doze and several battery-saving behaviours do not apply while charging, so these
+results say little about battery-powered behaviour.
+
+| Check | Result |
+|---|---|
+| Stream granted | `LowLatency`, `Shared`, 48 000 Hz, burst 96 frames (2 ms), buffer 192 frames (4 ms) |
+| Foreground service | Running as `mediaPlayback` with its notification |
+| App in background, then screen off | Playback continued |
+| **Hands-off, screen off, 10 minutes** | Audio callbacks ran at **500.0 per second throughout** (every 60-second sample matched; no stall). Service still running at the end. The screen stayed off (`Dozing`) the whole time |
+| Underruns (xruns) in that run | **0 for the first ~4 minutes, then 4 within one minute (between 14:57:55 and 14:58:57), none after.** Not zero |
+| Listening check | Reported as "sounds good" by the tester, in a short foreground session; the 10-minute screen-off run was not listened to |
+
+Notes on how the run was measured:
+
+- The numbers come from the app's own diagnostics line, sampled once a minute. The Android log
+  buffer is small and kept only about the last four minutes, so the end-of-run summary covers
+  that window only; the minute-by-minute samples cover the whole run.
+- Two earlier attempts were discarded because playback never started (the screen was locked and
+  the Start tap did not reach the app). The test script now refuses to lock the screen unless
+  it has confirmed audio is running.
+
+What this does and does not show:
+
+- **Shown:** the low-latency path is granted; the audio thread keeps running with the screen off
+  for 10 minutes; the foreground service survives.
+- **Not shown:** behaviour on battery (Doze), other devices, Bluetooth or wired headphones,
+  phone calls, battery saver, a 30-minute drift check, or any listening judgement of the
+  10-minute run.
+- **Open issue:** 4 underruns in 10 minutes means the 4 ms buffer (2 bursts) had too little
+  slack on this device under some conditions. Each underrun can be an audible glitch.
+- **Fix implemented, not yet re-measured:** the buffer now starts at 4 bursts (about 8 ms) and
+  grows by one burst whenever the underrun count rises (see
+  [architecture.md](architecture.md#audio-output-on-android-built-tested-on-one-device)). A
+  short run confirmed the 384-frame start; the long run below still has to be repeated.
+
+### Battery run (hands-off, unplugged) — to do
+
+Goal: show behaviour with Doze and battery saving active, which USB power prevents.
+
+1. Debug build installed; start playback from the app, then switch the screen off.
+2. Unplug the USB cable. Leave the phone untouched and stationary for at least 30 minutes.
+3. Plug it back in and read the record (the app writes it every 10 seconds):
+   `adb shell run-as no.onstad.metronom cat files/diagnostics.log`
+4. Pass criteria: the timestamps are continuous (no gap of more than about 10–20 seconds), the
+   callback counter advances by about 500 per second, `charging=false` and `interactive=false`
+   throughout, the last line is still a normal diagnostics line (a `service destroyed` line means
+   the service stopped; no closing line at all means the system killed the process), and the
+   underrun count stays at or near 0. `doze=true` appearing shows deep Doze was in effect.
 
 ## iPhone
 

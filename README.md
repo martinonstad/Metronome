@@ -7,8 +7,10 @@ phone.
 
 > **Status: early development (Milestone 0 of 5).** The metronome engine is written and tested
 > on the development machine, and a minimal Android app (start/stop, tempo, beats per bar,
-> foreground service) builds. It has **not yet been run on a phone**. The markdown library and
-> the iPhone app are not built yet. See [Status](#status) and the [roadmap](docs/roadmap.md).
+> foreground service) builds and has been run on one phone (a Pixel 8 Pro): the low-latency
+> audio stream works and keeps running with the screen off, but a first run showed a few audio
+> underruns, which the latest build addresses and still has to be re-measured on battery. The
+> markdown library and the iPhone app are not built yet. See [Status](#status) and the [roadmap](docs/roadmap.md).
 
 ## Goals
 

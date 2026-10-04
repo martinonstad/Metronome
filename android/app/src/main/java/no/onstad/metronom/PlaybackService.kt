@@ -8,12 +8,16 @@ import android.app.Service
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.ServiceInfo
+import android.os.BatteryManager
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import java.io.File
+import java.time.LocalDateTime
 import uniffi.metronom_ffi.MetronomeException
 
 /**
@@ -23,13 +27,33 @@ import uniffi.metronom_ffi.MetronomeException
  */
 class PlaybackService : Service() {
   private val handler = Handler(Looper.getMainLooper())
+  private val isDebuggable get() = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+  private var tick = 0
   private val logDiagnostics =
     object : Runnable {
       override fun run() {
-        Log.i(TAG, metronomApp.metronome.diagnostics())
+        val line = metronomApp.metronome.diagnostics()
+        Log.i(TAG, line)
+        if (tick++ % FILE_EVERY_N_TICKS == 0) appendToDiagnosticsFile(line)
         handler.postDelayed(this, DIAGNOSTICS_INTERVAL_MS)
       }
     }
+
+  /**
+   * Debug builds only: a timestamped record that survives the small log buffer and an unplugged
+   * USB cable, including whether the phone was in Doze, interactive or charging. Read it with
+   * `adb shell run-as no.onstad.metronom cat files/diagnostics.log`.
+   */
+  private fun appendToDiagnosticsFile(line: String) {
+    val power = getSystemService(PowerManager::class.java)
+    val battery = getSystemService(BatteryManager::class.java)
+    val file = File(filesDir, DIAGNOSTICS_FILE)
+    if (file.length() > MAX_DIAGNOSTICS_FILE_BYTES) file.delete()
+    file.appendText(
+      "${LocalDateTime.now().withNano(0)} | doze=${power.isDeviceIdleMode} " +
+        "interactive=${power.isInteractive} charging=${battery.isCharging} | $line\n"
+    )
+  }
 
   override fun onBind(intent: Intent?): IBinder? = null
 
@@ -57,7 +81,8 @@ class PlaybackService : Service() {
       stopSelf()
       return
     }
-    if (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) {
+    if (isDebuggable) {
+      tick = 0
       handler.removeCallbacks(logDiagnostics)
       handler.postDelayed(logDiagnostics, DIAGNOSTICS_INTERVAL_MS)
     }
@@ -65,6 +90,8 @@ class PlaybackService : Service() {
 
   override fun onDestroy() {
     handler.removeCallbacksAndMessages(null)
+    // A run that ends without this line means the system killed the service.
+    if (isDebuggable) appendToDiagnosticsFile("service destroyed: ${metronomApp.metronome.diagnostics()}")
     metronomApp.metronome.stop()
     super.onDestroy()
   }
@@ -106,5 +133,8 @@ class PlaybackService : Service() {
     private const val CHANNEL_ID = "playback"
     private const val NOTIFICATION_ID = 1
     private const val DIAGNOSTICS_INTERVAL_MS = 2_000L
+    private const val FILE_EVERY_N_TICKS = 5 // one file line every 10 s
+    private const val DIAGNOSTICS_FILE = "diagnostics.log"
+    private const val MAX_DIAGNOSTICS_FILE_BYTES = 512 * 1024L
   }
 }

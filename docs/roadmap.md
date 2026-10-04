@@ -19,8 +19,12 @@ until a device is available).
 - [x] Minimal Compose app: start/stop, tempo ±, beats per bar, diagnostics line
 - [x] Minimal foreground service so playback survives the screen locking
 - [ ] **Go/no-go:** steady click on a physical phone with the screen locked, low-latency stream
-      confirmed in diagnostics, no audible jitter. *Not yet run: the app builds but has not been
-      installed on a phone.*
+      confirmed in diagnostics, no audible jitter. *Partly met on a Pixel 8 Pro (Android 17):
+      low-latency stream granted, audio callbacks steady for 10 minutes with the screen off, but
+      4 underruns occurred and the run was on USB power. See
+      [testing.md](testing.md#measured-results). Adaptive buffer growth (starting at 4 bursts) is
+      implemented and unit-tested. Remaining: repeat the run, on battery, and with a listening
+      check.*
 
 ### M1 — Core in Rust
 
