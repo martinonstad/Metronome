@@ -81,7 +81,13 @@ private fun flashIntensity(state: BeatState?): Float {
  * type it, or use the slider), beats per bar, tap tempo and Start/Stop.
  */
 @Composable
-fun MetronomeScreen(metronome: Metronome, onStart: () -> Unit, onStop: () -> Unit, onOpenSongs: () -> Unit) {
+fun MetronomeScreen(
+  metronome: Metronome,
+  onStart: () -> Unit,
+  onStop: () -> Unit,
+  onOpenSongs: () -> Unit,
+  onOpenSetlists: () -> Unit,
+) {
   var running by remember { mutableStateOf(metronome.isRunning()) }
   var bpm by remember { mutableIntStateOf(metronome.bpm().roundToInt()) }
   var beats by remember { mutableIntStateOf(metronome.beatsPerBar().toInt()) }
@@ -140,6 +146,9 @@ fun MetronomeScreen(metronome: Metronome, onStart: () -> Unit, onStop: () -> Uni
     Box(Modifier.fillMaxWidth()) {
       TextButton(onClick = onOpenSongs, modifier = Modifier.align(Alignment.CenterStart)) {
         Text(stringResource(R.string.songs))
+      }
+      TextButton(onClick = onOpenSetlists, modifier = Modifier.align(Alignment.CenterEnd)) {
+        Text(stringResource(R.string.setlists))
       }
       Text(
         stringResource(R.string.mode_manual),

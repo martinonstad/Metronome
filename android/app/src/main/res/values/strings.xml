@@ -51,4 +51,32 @@
     <string name="delete_song_title">Delete “%1$s”?</string>
     <string name="delete_song_unused">This can\'t be undone.</string>
     <string name="delete_song_used">It will also be removed from:</string>
+    <string name="setlists">Setlists</string>
+    <plurals name="setlists_count">
+        <item quantity="one">%1$d setlist</item>
+        <item quantity="other">%1$d setlists</item>
+    </plurals>
+    <string name="no_band">No band</string>
+    <string name="new_setlist">New setlist</string>
+    <string name="setlists_empty_title">Build your first setlist</string>
+    <string name="setlists_empty_body">A setlist is an ordered list of songs for a band or a gig.</string>
+    <string name="copy">Copy</string>
+    <string name="edit">Edit</string>
+    <string name="setlist_name_label">Name</string>
+    <string name="setlist_band_label">Band or project (optional)</string>
+    <string name="setlist_details_title">Setlist details</string>
+    <string name="create">Create</string>
+    <string name="delete_setlist_title">Delete “%1$s”?</string>
+    <string name="delete_setlist_body">Your songs stay in the song list. This can\'t be undone.</string>
+    <string name="setlist_empty_songs">No songs yet. Add songs from your song list.</string>
+    <string name="add_songs">Add songs</string>
+    <string name="add_songs_title">Add songs to the end</string>
+    <string name="add_songs_none">Add some songs to your song list first.</string>
+    <string name="done">Done</string>
+    <string name="missing_song">Not in your song list</string>
+    <string name="move_up">Move %1$s up</string>
+    <string name="move_down">Move %1$s down</string>
+    <string name="remove_from_setlist">Remove %1$s from the setlist</string>
+    <string name="in_setlist_times">×%1$d in this setlist</string>
+    <string name="songs_missing">%1$d missing</string>
 </resources>

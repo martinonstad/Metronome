@@ -163,12 +163,21 @@ results are in [testing.md](testing.md#the-one-screen-main-screen-on-the-pixel-8
 Also built (run on the Pixel; see [testing.md](testing.md#the-songs-screens-on-the-pixel-8-pro-manual-2026-10-04-debug-build)): the **songs list** (search, add) and the **song
 editor** (title, tempo, beats, notes, save, delete with a note of which setlists use the song, and
 "Play this song now"). `LibraryStore` opens the library off the main thread, runs every call on a
-background thread and keeps the song list as Compose state; navigation is one current `Screen`
-with Back leading to its parent, kept across rotation.
+background thread and keeps the song list, the setlists grouped by band and a change counter as
+Compose state; navigation is one current `Screen` with Back leading to its parent, kept across
+rotation. A change that has started always finishes and refreshes those lists, even if the screen
+that asked for it has been left.
+
+The **setlists list** (grouped by band, copy and delete per row, "New setlist") and the
+**setlist editor** (name and band in a dialog with the existing bands as chips; songs with move
+up/down and remove; a searchable song picker that stays open to add several; copy; delete) are
+built too; see [testing.md](testing.md#the-setlists-screens-on-the-pixel-8-pro-manual-2026-10-04-debug-build).
+Every edit is saved at once, so the editor has no Save button, and the editor allows one change at
+a time so a second tap meant for the old order cannot land on the new one.
 
 Planned:
 
-- Setlists screens, the gig screen and the settings screen ([roadmap.md](roadmap.md), Milestone 3).
+- The gig screen and the settings screen ([roadmap.md](roadmap.md), Milestone 3).
 - The `Metronome` object lives in the `Application` and is owned by a **foreground service**
   (`mediaPlayback` type) so playback survives the screen locking and the activity going away.
   Apps that target Android 17 (API 37) must run a foreground service to play audio in the
