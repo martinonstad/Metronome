@@ -3,6 +3,7 @@
 uniffi::setup_scaffolding!();
 
 mod audio;
+mod library;
 
 use std::fmt;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};

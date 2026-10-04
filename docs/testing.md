@@ -13,7 +13,7 @@ This runs `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, the 
 cross-compiled for Android (so the Android-only audio code is checked too) and `cargo test`.
 Android and iPhone suites will be added to the same script as those milestones land.
 
-## What exists today (218 tests)
+## What exists today (231 tests)
 
 ### `metronom-core` engine and helpers (65 tests)
 
@@ -43,13 +43,21 @@ Android and iPhone suites will be added to the same script as those milestones l
 | Zip reader and writer | 18 | CRC-32 check value; stored and deflated entries; folders skipped; non-zip input; limits applied before anything big is made; **a zip bomb is refused**; encrypted and exotic entries refused; damaged content detected; duplicate names and backslashes refused; **our archives open in the real `unzip`, and archives made by the real `zip` are read**; **properties: arbitrary bytes never panic; a damaged archive never panics and never returns wrong data; any files round-trip** |
 | Archive (export/import) | 20 | Export then import recreates the library byte for byte; only library files are exported; a zipped folder is unwrapped; **path tricks refuse the whole archive and change nothing**; files outside the layout and system files are ignored with a reason; songs skipped or overwritten; setlists skipped, overwritten or kept both; **an imported setlist is written exactly as read**; an import can never overwrite an unreadable file; settings skipped or overwritten, and a newer settings file does not stop the rest; an unreadable `songs.md` stops the import before anything changes; archives beyond the limits refused; **property: any library survives export and import** |
 
-### `metronom-ffi` (8 tests)
+### `metronom-ffi` (21 tests)
 
 Settings round-trip through the exported object; tempo and bar length are clamped (30–300,
 1–99); switching song changes tempo and bar length without touching the sound; the sound mirror
 enum converts both ways; tapping sets the tempo through the exported object; there is nothing to
 show while stopped; `stop()` is idempotent; starting without an audio backend returns an error
 instead of crashing (host platforms).
+
+The 13 library tests exercise the exported `SongLibrary` against a real temporary folder: an empty
+or not-yet-created folder; **changes are saved at once and survive reopening**; errors carry what
+the UI needs (the duplicate title, the missing song, the setlist); values are made safe on the way
+in; a full setlist session persists; renaming and deleting a song reach the setlists; missing
+songs are counted; settings round-trip; export then import moves a library between folders and
+keeps both copies of a clashing setlist; a bad archive is a clear error and changes nothing; an
+unreadable `songs.md` is reported and never overwritten; warnings carry file and line.
 
 ### The one-screen main screen on the Pixel 8 Pro (manual, 2026-10-04, debug build)
 
@@ -69,6 +77,27 @@ Driven through the real app with adb (screen taps and UI dumps):
 
 Not judged: whether the flash looks in time with the click, how big and easy the targets feel
 when used with a real finger, and tap tempo.
+
+### The songs screens on the Pixel 8 Pro (manual, 2026-10-04, debug build)
+
+Driven through the real app with adb, reading the files straight off the phone
+(`adb shell run-as no.onstad.metronom cat files/Metronom/songs.md`):
+
+| Check | Result |
+|---|---|
+| Empty library | The songs list shows "0 songs" and "Start your song list" with an Add song button |
+| Add "Hotel California", 75 BPM (typed title, typed tempo, Save) | List shows `Hotel California  75 · 4`; `songs.md` is a clean table (`# Songs`, `Song` and `BPM` columns, right-aligned numbers) |
+| Add "Waltz for Debby", 132 BPM, 3 beats, notes "Intro 8 bars" | **`Beats` and `Notes` columns appear only now**; Hotel California's Beats cell is left empty (default 4) |
+| Add "hotel california" (same title, different case) | Rejected: "There's already a song called “hotel california”."; `songs.md` unchanged |
+| Edit Hotel California to 80 BPM | List and file updated |
+| Restart the app | Songs and tempos persist |
+| Delete "Waltz for Debby" while a hand-made `friday-gig.md` uses it | The dialog says "It will also be removed from: • Friday Gig (×1)"; afterwards the song is gone from `songs.md` **and from the setlist, whose list is renumbered and whose note "Soundcheck 18:00." is kept** |
+| Play this song now | The main screen shows 80 BPM and 4 beats |
+| **Hand-written `songs.md`** (own heading and prose before and after, an extra `Key` column, a row with `fast` as its tempo) | List shows 3 songs; the banner says "1 thing in your files was ignored or fixed", and its details read "songs.md, line 8: "fast" is not a tempo; 120 is used". After editing Wonderwall (87 → 88) the file keeps the prose before and after, the `Key` column, and the `fast` cell exactly as written; only the changed tempo differs (the table is re-aligned) |
+| Crashes | None in the log |
+
+Not judged: how the screens feel and look with a real finger (button sizes, spacing, the empty
+state), and anything on the iPhone.
 
 ### Beat flash timing (manual, 2026-10-04, Pixel 8 Pro, debug build, `PowerSaving` mode)
 

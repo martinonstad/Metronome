@@ -135,6 +135,7 @@ emulators do not reproduce either.
 | Gradle fails to configure with a JDK or "unsupported class file" error | Gradle is running on a JDK that is too new. Run via `scripts/env.sh`, or set `JAVA_HOME` to JDK 21 |
 | `sdkmanager` prints a deprecation warning | Expected; Google is moving to the `android` CLI. It still works |
 | `android` CLI prints a data-collection notice | It collects usage metrics by default. Pass `--no-metrics` (for example `android --no-metrics create --list`) |
+| Kotlin: "Return type mismatch: expected 'com.sun.jna.Library'" in `metronom_ffi.kt` | An exported UniFFI object is named `Library`, which clashes with the JNA class the generated file imports. Give the Rust type another name (it is `SongLibrary`) |
 | UniFFI bindgen finds no metadata in the `.so` | The release library is stripped. Generate from the host library as shown above |
 | Kotlin: "Conflicting declarations" / "'message' hides member of supertype 'Throwable'" in `metronom_ffi.kt` | An exported Rust error variant has a field named `message` or `cause`. Rename it (see the naming rule above) |
 | Gradle: "Unable to strip the following libraries" | Seen on debug builds and harmless there: the libraries are simply packaged unstripped (the Rust library is already size-optimised). Re-check on release builds in Milestone 4 |

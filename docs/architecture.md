@@ -136,6 +136,17 @@ The exported `Metronome` object:
 | `volume()` / `set_volume()` | Output level |
 | `diagnostics()` | One-line stream description |
 
+The second exported object, **`SongLibrary`** (`metronom-ffi/src/library.rs`), is the song library
+over one folder: `open(root)`, `songs()`, `addSong`, `updateSong`, `deleteSong`, `setlistsUsing`,
+the setlist calls (`setlistsByBand`, `setlist`, `createSetlist`, `renameSetlist`,
+`setSetlistBand`, `addSongToSetlist`, `removeSongFromSetlist`, `moveSongInSetlist`, `copySetlist`,
+`deleteSetlist`), `settings` / `updateSettings`, `exportArchive` / `importArchive` and `warnings`.
+Data crosses as plain records (`SongRecord`, `SetlistSummary`, `BandGroup`, `SetlistDetail`, …) and
+errors as `LibraryException` variants with the details the UI needs. **Every change is saved at
+once** (write-through), so the app cannot forget to save. The calls do file I/O: call them off the
+main thread. It is named `SongLibrary` because a class called `Library` would clash with JNA's
+`com.sun.jna.Library`, which the generated Kotlin imports.
+
 Bindings are generated from the **host** build of the library (`libmetronom_ffi.dylib`), not the
 Android `.so`, because release builds are stripped and UniFFI's library mode needs the metadata
 symbols. The exported interface is identical on every target.
@@ -149,10 +160,15 @@ flash bar and beat dots, the tempo number (tap to type) with a slider and −/+,
 tempo and Start/Stop. It has been run on the Pixel 8 Pro and its controls checked with adb; the
 results are in [testing.md](testing.md#the-one-screen-main-screen-on-the-pixel-8-pro-manual-2026-10-04-debug-build).
 
+Also built (run on the Pixel; see [testing.md](testing.md#the-songs-screens-on-the-pixel-8-pro-manual-2026-10-04-debug-build)): the **songs list** (search, add) and the **song
+editor** (title, tempo, beats, notes, save, delete with a note of which setlists use the song, and
+"Play this song now"). `LibraryStore` opens the library off the main thread, runs every call on a
+background thread and keeps the song list as Compose state; navigation is one current `Screen`
+with Back leading to its parent, kept across rotation.
+
 Planned:
 
-- Setlist/gig mode, the songs and setlists screens and the settings screen
-  ([roadmap.md](roadmap.md), Milestone 3).
+- Setlists screens, the gig screen and the settings screen ([roadmap.md](roadmap.md), Milestone 3).
 - The `Metronome` object lives in the `Application` and is owned by a **foreground service**
   (`mediaPlayback` type) so playback survives the screen locking and the activity going away.
   Apps that target Android 17 (API 37) must run a foreground service to play audio in the

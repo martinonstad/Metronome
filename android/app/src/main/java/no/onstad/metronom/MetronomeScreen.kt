@@ -60,10 +60,6 @@ import kotlinx.coroutines.delay
 import uniffi.metronom_ffi.BeatState
 import uniffi.metronom_ffi.Metronome
 
-private const val MIN_BPM = 30
-private const val MAX_BPM = 300
-private const val MAX_BEATS = 99
-
 /** Beats shown as dots; a longer bar shows a "Beat n of m" label instead. */
 private const val MAX_DOTS = 16
 
@@ -85,7 +81,7 @@ private fun flashIntensity(state: BeatState?): Float {
  * type it, or use the slider), beats per bar, tap tempo and Start/Stop.
  */
 @Composable
-fun MetronomeScreen(metronome: Metronome, onStart: () -> Unit, onStop: () -> Unit) {
+fun MetronomeScreen(metronome: Metronome, onStart: () -> Unit, onStop: () -> Unit, onOpenSongs: () -> Unit) {
   var running by remember { mutableStateOf(metronome.isRunning()) }
   var bpm by remember { mutableIntStateOf(metronome.bpm().roundToInt()) }
   var beats by remember { mutableIntStateOf(metronome.beatsPerBar().toInt()) }
@@ -141,15 +137,21 @@ fun MetronomeScreen(metronome: Metronome, onStart: () -> Unit, onStop: () -> Uni
     modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 24.dp, vertical = 12.dp),
     horizontalAlignment = Alignment.CenterHorizontally,
   ) {
-    Text(
-      stringResource(R.string.mode_manual),
-      style = MaterialTheme.typography.labelLarge,
-      color = MaterialTheme.colorScheme.onSecondaryContainer,
-      modifier =
-        Modifier.clip(CircleShape)
-          .background(MaterialTheme.colorScheme.secondaryContainer)
-          .padding(horizontal = 16.dp, vertical = 4.dp),
-    )
+    Box(Modifier.fillMaxWidth()) {
+      TextButton(onClick = onOpenSongs, modifier = Modifier.align(Alignment.CenterStart)) {
+        Text(stringResource(R.string.songs))
+      }
+      Text(
+        stringResource(R.string.mode_manual),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSecondaryContainer,
+        modifier =
+          Modifier.align(Alignment.Center)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+      )
+    }
     Spacer(Modifier.height(14.dp))
     FlashBar(beatState)
     Spacer(Modifier.height(14.dp))
@@ -281,39 +283,4 @@ private fun BeatDots(beats: Int, state: State<BeatState?>) {
       )
     }
   }
-}
-
-/** Type a tempo directly. Rejects anything outside 30–300 with a message instead of clamping. */
-@Composable
-private fun TempoDialog(current: Int, onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
-  var text by remember { mutableStateOf("") }
-  var invalid by remember { mutableStateOf(false) }
-  val focus = remember { FocusRequester() }
-  val confirm = {
-    val value = text.toIntOrNull()
-    if (value == null || value !in MIN_BPM..MAX_BPM) invalid = true else onConfirm(value)
-  }
-  AlertDialog(
-    onDismissRequest = onDismiss,
-    title = { Text(stringResource(R.string.enter_tempo)) },
-    text = {
-      OutlinedTextField(
-        value = text,
-        onValueChange = {
-          text = it.filter(Char::isDigit).take(3)
-          invalid = false
-        },
-        placeholder = { Text(current.toString()) },
-        singleLine = true,
-        isError = invalid,
-        supportingText = { if (invalid) Text(stringResource(R.string.tempo_error)) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-        keyboardActions = KeyboardActions(onDone = { confirm() }),
-        modifier = Modifier.focusRequester(focus),
-      )
-    },
-    confirmButton = { TextButton(onClick = { confirm() }) { Text(stringResource(R.string.ok)) } },
-    dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-  )
-  LaunchedEffect(Unit) { focus.requestFocus() }
 }
