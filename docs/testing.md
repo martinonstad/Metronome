@@ -124,6 +124,38 @@ Not tested: screen rotation and the app being recreated while a setlist is open,
 file is changed by hand while the app is open, and long lists (hundreds of songs). Not judged:
 how the screens feel with a real finger, and reordering by dragging (only move up/down exists).
 
+### The gig screen on the Pixel 8 Pro (manual, 2026-10-04, debug build)
+
+Driven through the real app with adb. The test setlist "Friday Gig" had five lines: Superstition
+(100, 4 beats), a song that is **not** in the library, Waltz for Debby (132, 3 beats), Sweet
+Child (125, 4 beats, notes "Intro 8 bars") and Hotel California (75, 4 beats). The click was
+followed through the debug beat log (`adb logcat -s MetronomFlash`), which prints each beat change
+with the time the displayed beat began.
+
+| Check | Result |
+|---|---|
+| Tap the setlist row | Gig screen at 1 / 5: "Superstition", 100, "BPM · 4 beats", "Next: Waltz for Debby · 132" (the missing song is stepped over) |
+| Start, then **Next song while playing** (twice) | Beat spacing 600.0 ms (100 BPM), then 454.5 ms with beats 0, 1, 2 (132 BPM, 3 beats), then 480.0 ms with beats 0–3 (125 BPM). **The click never stopped; the tempo changed from the beat after the tap, and that beat was beat 1 of the new bar** |
+| Last song | "Last song" instead of the next-up line; the button says "End of setlist" and is disabled (tapping it does nothing) |
+| Previous (three times from the last song) | 5 → 4 → 3 → 1: the missing song is skipped; Previous is disabled at song 1 |
+| Song list: swipe up from the strip | The list opens with the current song highlighted and the missing song marked "Not in your song list"; tapping the missing song does nothing; tapping "Sweet Child" jumps to 4 / 5 and closes the list |
+| Notes | "Intro 8 bars" is shown under the tempo |
+| Back to the manual screen while playing | Shows 125 and 4 beats, still running; opening the same setlist again resumes at 4 / 5 and **the beat sequence continues with no restart** (spacing stays 480.0 ms, bar position unbroken across 8 beats) |
+| Screen kept awake | The app's window holds the screen on while the gig screen is open; `mHoldScreenWindow` is empty again on the manual screen |
+| **Next while stopped** | Loads the song (the manual screen then shows 132 and 3 beats); no playback service is started |
+| An empty setlist | "There is no song to play in this setlist yet." with an Edit setlist button that opens the editor |
+| Manual screen after its beat code was moved to a shared file | Start, flash log and Stop work as before; the first beat of a run is again shown late (104 ms this time; 77 ms before): the known start-up effect |
+
+Not tested: screen rotation while a setlist is open, a setlist that is edited while it is being
+played, a long set (hundreds of songs), the Previous and Next buttons with real thumbs on a
+stand, and what happens when the phone rings during the set. Not judged: how it looks in bright
+light, whether the sizes are right, and whether a swipe up on the strip is easy to do (or too easy
+to do by accident) at a gig.
+
+Two things in the debug beat log look odd but are the logger, not the click: it prints only when
+the beat *number* changes (a new bar that begins with beat 0 right after a beat 0 prints nothing, so
+one gap looks twice as long), and a screen that starts it prints the current beat again.
+
 ### Beat flash timing (manual, 2026-10-04, Pixel 8 Pro, debug build, `PowerSaving` mode)
 
 The screen's frame loop calls `visual_state` once per display frame and, in debug builds, logs

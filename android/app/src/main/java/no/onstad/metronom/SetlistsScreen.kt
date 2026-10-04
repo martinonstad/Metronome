@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,9 +37,16 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import uniffi.metronom_ffi.SetlistSummary
 
-/** Every setlist, grouped by band. Tap one to edit it; copy and delete are on each row. */
+/**
+ * Every setlist, grouped by band. Tap one to play it; edit, copy and delete are on each row.
+ */
 @Composable
-fun SetlistsScreen(store: LibraryStore, onBack: () -> Unit, onOpen: (stem: String) -> Unit) {
+fun SetlistsScreen(
+  store: LibraryStore,
+  onBack: () -> Unit,
+  onPlay: (stem: String) -> Unit,
+  onEdit: (stem: String) -> Unit,
+) {
   var showNew by remember { mutableStateOf(false) }
   var toDelete by remember { mutableStateOf<SetlistSummary?>(null) }
   var problem by remember { mutableStateOf<String?>(null) }
@@ -75,7 +83,8 @@ fun SetlistsScreen(store: LibraryStore, onBack: () -> Unit, onOpen: (stem: Strin
               items(group.setlists, key = { it.stem }) { setlist ->
                 SetlistRow(
                   setlist,
-                  onOpen = { onOpen(setlist.stem) },
+                  onPlay = { onPlay(setlist.stem) },
+                  onEdit = { onEdit(setlist.stem) },
                   onCopy = {
                     scope.launch {
                       problem = (store.change { it.copySetlist(setlist.stem) } as? Outcome.Failed)?.message
@@ -108,7 +117,7 @@ fun SetlistsScreen(store: LibraryStore, onBack: () -> Unit, onOpen: (stem: Strin
         when (val outcome = store.change { it.createSetlist(name, band) }) {
           is Outcome.Ok -> {
             showNew = false
-            onOpen(outcome.value)
+            onEdit(outcome.value)
             null
           }
           is Outcome.Failed -> outcome.message
@@ -140,8 +149,15 @@ fun SetlistsScreen(store: LibraryStore, onBack: () -> Unit, onOpen: (stem: Strin
 }
 
 @Composable
-private fun SetlistRow(setlist: SetlistSummary, onOpen: () -> Unit, onCopy: () -> Unit, onDelete: () -> Unit) {
-  Row(Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun SetlistRow(
+  setlist: SetlistSummary,
+  onPlay: () -> Unit,
+  onEdit: () -> Unit,
+  onCopy: () -> Unit,
+  onDelete: () -> Unit,
+) {
+  val tight = PaddingValues(horizontal = 8.dp)
+  Row(Modifier.fillMaxWidth().clickable(onClick = onPlay).padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
     Column(Modifier.weight(1f)) {
       Text(setlist.name, style = MaterialTheme.typography.bodyLarge)
       Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -159,8 +175,11 @@ private fun SetlistRow(setlist: SetlistSummary, onOpen: () -> Unit, onCopy: () -
         }
       }
     }
-    TextButton(onClick = onCopy) { Text(stringResource(R.string.copy)) }
-    TextButton(onClick = onDelete) { Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error) }
+    TextButton(onClick = onEdit, contentPadding = tight) { Text(stringResource(R.string.edit)) }
+    TextButton(onClick = onCopy, contentPadding = tight) { Text(stringResource(R.string.copy)) }
+    TextButton(onClick = onDelete, contentPadding = tight) {
+      Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
+    }
   }
 }
 

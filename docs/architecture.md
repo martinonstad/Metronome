@@ -175,9 +175,20 @@ built too; see [testing.md](testing.md#the-setlists-screens-on-the-pixel-8-pro-m
 Every edit is saved at once, so the editor has no Save button, and the editor allows one change at
 a time so a second tap meant for the old order cannot land on the new one.
 
+The **gig screen** opens from a setlist row. It loads the current song's tempo and bar length into
+the `Metronome` (`Metronome.load`: tempo, bar length, then `restart_bar`, so a running click
+switches on the next beat and that beat is beat 1 of the new bar). **Next song** and the small
+Previous step through the playable songs (a song that is missing from the library is skipped); a
+swipe up or a tap on the strip at the bottom opens the song list to jump to any song. The
+position is kept for the most recently played setlist, so coming back to it resumes at the same
+song; opening the screen does not restart a click that already has that song's tempo and bar
+length (a rotation, or returning from another screen). The screen is kept awake while it is open
+(`keep_screen_on` in `settings.md`). The flash bar, beat dots and the per-frame beat state are
+shared with the manual screen (`BeatVisuals.kt`).
+
 Planned:
 
-- The gig screen and the settings screen ([roadmap.md](roadmap.md), Milestone 3).
+- The settings screen and the export/import screens ([roadmap.md](roadmap.md), Milestone 3).
 - The `Metronome` object lives in the `Application` and is owned by a **foreground service**
   (`mediaPlayback` type) so playback survives the screen locking and the activity going away.
   Apps that target Android 17 (API 37) must run a foreground service to play audio in the
