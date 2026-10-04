@@ -115,7 +115,11 @@ Bindings are generated from the **host** build of the library (`libmetronom_ffi.
 Android `.so`, because release builds are stripped and UniFFI's library mode needs the metadata
 symbols. The exported interface is identical on every target.
 
-## Android app (planned)
+## Android app (spike built; features planned)
+
+Built (Milestone 0 spike, builds but not yet run on a phone): `MetronomApp` holds the single
+`Metronome`; `PlaybackService` owns playback; `MainActivity` and `MetronomeScreen` offer
+start/stop, tempo ±1/±5, beats per bar and a diagnostics line. Everything else below is planned.
 
 - The `Metronome` object lives in the `Application` and is owned by a **foreground service**
   (`mediaPlayback` type) so playback survives the screen locking and the activity going away.

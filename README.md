@@ -6,9 +6,9 @@ setlists, band/project groups — is a plain markdown file you can edit by hand 
 phone.
 
 > **Status: early development (Milestone 0 of 5).** The metronome engine is written and tested
-> on the development machine, and the audio output cross-compiles for Android. The Android app,
-> the markdown library and the iPhone app are not built yet. See [Status](#status) and the
-> [roadmap](docs/roadmap.md).
+> on the development machine, and a minimal Android app (start/stop, tempo, beats per bar,
+> foreground service) builds. It has **not yet been run on a phone**. The markdown library and
+> the iPhone app are not built yet. See [Status](#status) and the [roadmap](docs/roadmap.md).
 
 ## Goals
 
@@ -37,7 +37,7 @@ Not in v1: tempo changes inside a song, tempo ramps, polyrhythms, footswitch con
 
 | Milestone | State |
 |---|---|
-| **M0** Setup + audio spike | In progress. Repo, toolchain, scripts, Rust engine (with tests) and Android audio output are done. Android app shell and the on-device latency check are next |
+| **M0** Setup + audio spike | In progress. Repo, toolchain, scripts, Rust engine (with tests), Android audio output and a minimal Android app that builds are done. The on-device latency check on a phone is the remaining go/no-go |
 | **M1** Core: engine + markdown store | Engine done; markdown store and the [file format](docs/file-format.md) are specified but not implemented |
 | **M2** Android metronome screen | Not started |
 | **M3** Android library (projects, songs, setlists, export/import) | Not started |
@@ -53,7 +53,13 @@ Requires macOS with Homebrew. Full setup is in [docs/development.md](docs/develo
 
 ```bash
 scripts/doctor.sh      # shows what is installed, what is missing, and how to fix it
-scripts/test-all.sh    # format check, clippy, all Rust tests
+scripts/test-all.sh    # format check, clippy, all Rust tests, Android debug build
+```
+
+Build and install the Android app on a connected phone (USB debugging on):
+
+```bash
+cd android && . ../scripts/env.sh && ./gradlew installDebug
 ```
 
 Homebrew's `rustup` is not on your `PATH` by default; the scripts source `scripts/env.sh` for
@@ -65,7 +71,7 @@ you. To use the toolchain in your own shell: `. scripts/env.sh`.
 |---|---|
 | `core/metronom-core` | Pure Rust: metronome engine (scheduler, click synth, live controls); later the markdown store. No OS dependencies, fully host-testable |
 | `core/metronom-ffi` | UniFFI interface the UIs call, plus the platform audio output (Android AAudio today) |
-| `android/` | Android app: Kotlin + Jetpack Compose |
+| `android/` | Android app: Kotlin + Jetpack Compose. Gradle builds the Rust library and Kotlin bindings automatically |
 | `ios/` | iPhone app: SwiftUI (later milestone) |
 | `docs/` | Architecture, file format, development guide, testing, roadmap |
 | `testdata/` | Sample libraries for tests |

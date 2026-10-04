@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Metronom</string>
+    <string name="bpm">BPM</string>
+    <string name="beats_per_bar">Beats per bar</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="playing">Playing</string>
+    <string name="playback_channel">Playback</string>
+</resources>

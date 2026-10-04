@@ -10,15 +10,17 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use audio::Output;
 use metronom_core::engine::Controls;
 
+/// Field names must not be `message` (or `cause`): the generated Kotlin exception class already
+/// inherits those from `Throwable` and would not compile.
 #[derive(Debug, uniffi::Error)]
 pub enum MetronomeError {
-    Audio { message: String },
+    Audio { detail: String },
 }
 
 impl fmt::Display for MetronomeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Audio { message } => write!(f, "audio error: {message}"),
+            Self::Audio { detail } => write!(f, "audio error: {detail}"),
         }
     }
 }
@@ -57,7 +59,7 @@ impl Metronome {
         }
         *output = None; // close a dead stream before opening a new one
         let opened = Output::open(Arc::clone(&self.controls), sample_rate)
-            .map_err(|message| MetronomeError::Audio { message })?;
+            .map_err(|detail| MetronomeError::Audio { detail })?;
         *output = Some(opened);
         Ok(())
     }

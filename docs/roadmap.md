@@ -14,11 +14,13 @@ until a device is available).
 - [x] Toolchain: Rust, cargo-ndk, JDK 21, Android SDK/NDK
 - [x] Engine: scheduler, click synth, live controls — 17 tests incl. one-hour drift
 - [x] FFI crate with UniFFI `Metronome` object and AAudio output; cross-compiles for arm64
-- [ ] Generate Kotlin bindings and wire the native library into a Gradle build (one command)
-- [ ] Minimal Compose app: start/stop, tempo ±, beats per bar, diagnostics line
-- [ ] Minimal foreground service so playback survives the screen locking
+- [x] Generate Kotlin bindings and wire the native library into a Gradle build (one command:
+      `./gradlew assembleDebug`)
+- [x] Minimal Compose app: start/stop, tempo ±, beats per bar, diagnostics line
+- [x] Minimal foreground service so playback survives the screen locking
 - [ ] **Go/no-go:** steady click on a physical phone with the screen locked, low-latency stream
-      confirmed in diagnostics, no audible jitter
+      confirmed in diagnostics, no audible jitter. *Not yet run: the app builds but has not been
+      installed on a phone.*
 
 ### M1 — Core in Rust
 
@@ -83,7 +85,8 @@ footswitch or volume-button control, cloud sync, tuner. The file format leaves r
 
 - **License** — not chosen yet; the repository is public, so add a license file before accepting
   contributions or reuse.
-- **Android application id** — placeholder `no.onstad.metronom`; confirm or change before the
-  Android project is committed, since it is permanent once published.
+- **Android application id** — placeholder `no.onstad.metronom` (in `android/app/build.gradle.kts`
+  and the Kotlin package); change it before the first published release, since it is permanent
+  once published.
 - **Compound-meter convention** — BPM counts the denominator note (6/8 at 120 = 120 eighth
   pulses). Revisit if a "dotted-quarter" option is wanted.

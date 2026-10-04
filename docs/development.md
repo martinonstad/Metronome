@@ -61,24 +61,29 @@ cargo test                    # unit tests
 cargo clippy --all-targets -- -D warnings
 ```
 
-### Android native library
+### Android app (one command)
 
 ```bash
-. scripts/env.sh
-cd core
-cargo ndk -t arm64-v8a -P 26 -o ../android/app/src/main/jniLibs build --release -p metronom-ffi
+cd android
+. ../scripts/env.sh
+./gradlew assembleDebug        # or installDebug to put it on a connected phone
 ```
 
-This writes `libmetronom_ffi.so` (about 360 KB) to `android/app/src/main/jniLibs/arm64-v8a/`.
-Only `arm64-v8a` is built: every current phone, and the emulator on Apple Silicon, uses it.
+The first build downloads Gradle, the Android Gradle Plugin and Compose (a few minutes);
+later builds take seconds. Gradle runs `scripts/build-android-libs.sh` before every build, which:
 
-The Android app shell and the Gradle task that runs this automatically are part of Milestone 0 and
-are not committed yet.
+1. cross-compiles `libmetronom_ffi.so` for `arm64-v8a` (about 360 KB) into
+   `android/app/src/main/jniLibs/`, and
+2. regenerates the Kotlin bindings into `android/app/src/main/java/uniffi/`.
+
+Both outputs are git-ignored. Only `arm64-v8a` is built: every current phone, and the emulator
+on Apple Silicon, uses it. A debug APK is about 12 MB because it is unminified and includes
+Compose tooling; the 10 MB budget applies to the release build (Milestone 4).
 
 ### Kotlin bindings
 
-Generated from the **host** build, because release builds are stripped of the metadata UniFFI
-needs:
+The script generates them from the **host** build of the library, because release builds are
+stripped of the metadata UniFFI needs. To run the steps by hand:
 
 ```bash
 cd core
@@ -88,17 +93,22 @@ cargo run --features bindgen --bin uniffi-bindgen -- generate \
   --language kotlin --out-dir ../android/app/src/main/java --no-format
 ```
 
-Generated files are git-ignored and are recreated by the build. `--no-format` skips the optional
-`ktlint` pass. The generated Kotlin depends on [JNA](https://github.com/java-native-access/jna)
-(`com.sun.jna`), which the Android app must include as an `aar` dependency; UniFFI exposes the
-Rust error type to Kotlin as `MetronomeException`.
+`--no-format` skips the optional `ktlint` pass. The generated Kotlin depends on
+[JNA](https://github.com/java-native-access/jna) (`com.sun.jna`), which the app includes as an
+`aar` dependency. UniFFI exposes the Rust error type to Kotlin as `MetronomeException`.
+
+**Naming rule for exported errors:** do not name an error variant's field `message` or `cause`.
+The generated Kotlin exception inherits those from `Throwable`, and the build fails with
+"Conflicting declarations".
 
 ## Running on a phone
 
 1. On the phone: enable **Developer options**, then **USB debugging**.
 2. Connect by USB and accept the "Allow USB debugging?" prompt.
 3. `scripts/doctor.sh` should now list the device (or run `adb devices`).
-4. Install and run (once the app shell exists): `cd android && ./gradlew installDebug`.
+4. Install and run: `cd android && . ../scripts/env.sh && ./gradlew installDebug`, then open
+   **Metronom** on the phone. Debug builds log the audio diagnostics line every two seconds:
+   `adb logcat -s Metronom`.
 
 Use a physical phone for anything involving audio timing, latency or background playback;
 emulators do not reproduce either.
@@ -112,9 +122,9 @@ emulators do not reproduce either.
 - **Clamp, don't reject.** Out-of-range user input is clamped to the valid range.
 - **Formatting and lints are enforced:** `cargo fmt` and `cargo clippy -D warnings` run in
   `scripts/test-all.sh`.
-- **Android application id.** The planned id is `no.onstad.metronom`, a placeholder that is not
-  in the repository yet. It is permanent once an app is published, so confirm it before the
-  Android project is committed.
+- **Android application id.** It is `no.onstad.metronom`, a placeholder. It is permanent once an
+  app is published, so change it (in `android/app/build.gradle.kts` and the Kotlin package)
+  before the first release if it should be different.
 
 ## Troubleshooting
 
@@ -126,5 +136,7 @@ emulators do not reproduce either.
 | `sdkmanager` prints a deprecation warning | Expected; Google is moving to the `android` CLI. It still works |
 | `android` CLI prints a data-collection notice | It collects usage metrics by default. Pass `--no-metrics` (for example `android --no-metrics create --list`) |
 | UniFFI bindgen finds no metadata in the `.so` | The release library is stripped. Generate from the host library as shown above |
+| Kotlin: "Conflicting declarations" / "'message' hides member of supertype 'Throwable'" in `metronom_ffi.kt` | An exported Rust error variant has a field named `message` or `cause`. Rename it (see the naming rule above) |
+| Gradle: "Unable to strip the following libraries" | Seen on debug builds and harmless there: the libraries are simply packaged unstripped (the Rust library is already size-optimised). Re-check on release builds in Milestone 4 |
 | No device shown by `adb devices` | Re-plug, confirm the USB debugging prompt on the phone, try a data-capable cable; `adb kill-server && adb start-server` |
 | Phone shows "unauthorized" | Revoke USB debugging authorisations in Developer options and reconnect |
