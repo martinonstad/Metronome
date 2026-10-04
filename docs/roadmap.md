@@ -63,7 +63,11 @@ until a device is available).
 
 ### M3 — Library and gig mode (Android)
 
-- [ ] Songs list and editor: add, edit, delete (with a warning if a setlist uses the song)
+- [x] Library exposed to the app (`SongLibrary` over UniFFI, every change saved at once; 13 tests)
+- [x] Songs list and editor: add, edit, delete (says which setlists use the song), search,
+      "Play this song now". Run on the Pixel with adb, files read off the phone
+      ([testing.md](testing.md#the-songs-screens-on-the-pixel-8-pro-manual-2026-10-04-debug-build));
+      still to judge by hand: how the screens feel
 - [ ] Setlists list (grouped by band) and editor: create, rename, change band, add/remove/reorder
       songs, copy, delete
 - [ ] Gig screen: current song, one-tap Next and a small Previous, song list to jump to any song,

@@ -20,4 +20,35 @@
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="beat_of">Beat %1$d of %2$d</string>
+    <string name="songs">Songs</string>
+    <string name="back">Back</string>
+    <plurals name="songs_count">
+        <item quantity="one">%1$d song</item>
+        <item quantity="other">%1$d songs</item>
+    </plurals>
+    <plurals name="warnings_banner">
+        <item quantity="one">%1$d thing in your files was ignored or fixed. Tap for details</item>
+        <item quantity="other">%1$d things in your files were ignored or fixed. Tap for details</item>
+    </plurals>
+    <string name="warnings_title">Things in your files</string>
+    <string name="close">Close</string>
+    <string name="opening_library">Opening your songs…</string>
+    <string name="search_songs">Search songs</string>
+    <string name="no_matches">No songs match.</string>
+    <string name="add_song">Add song</string>
+    <string name="songs_empty_title">Start your song list</string>
+    <string name="songs_empty_body">Add songs to load their tempo and beats with one tap.</string>
+    <string name="new_song">New song</string>
+    <string name="edit_song">Edit song</string>
+    <string name="title_label">Title</string>
+    <string name="tempo_label">Tempo (BPM)</string>
+    <string name="type_tempo">Type a tempo</string>
+    <string name="notes_label">Notes (optional)</string>
+    <string name="notes_hint">Key, capo, intro length</string>
+    <string name="delete">Delete</string>
+    <string name="save">Save</string>
+    <string name="play_now">Play this song now</string>
+    <string name="delete_song_title">Delete “%1$s”?</string>
+    <string name="delete_song_unused">This can\'t be undone.</string>
+    <string name="delete_song_used">It will also be removed from:</string>
 </resources>
