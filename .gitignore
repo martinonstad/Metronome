@@ -1,0 +1,25 @@
+# Rust
+target/
+
+# Android / Gradle
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+captures/
+*.apk
+*.aab
+*.jks
+*.keystore
+android/app/src/main/jniLibs/
+android/app/src/main/java/uniffi/
+
+# iOS / Xcode
+xcuserdata/
+DerivedData/
+*.xcframework/
+
+# OS / editor / tooling
+.DS_Store
+.claude/settings.local.json
