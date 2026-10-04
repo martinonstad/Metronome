@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 40cfaef7431654bca5bbb7bc6f141f9407fc5b4a03be5a2f91838da124a76ee0 # shrinks to ops = [CreateSetlist(0, false), CreateSetlist(0, false), AddSong(0, 30, 1)]

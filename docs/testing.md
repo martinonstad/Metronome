@@ -13,9 +13,9 @@ This runs `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, the 
 cross-compiled for Android (so the Android-only audio code is checked too) and `cargo test`.
 Android and iPhone suites will be added to the same script as those milestones land.
 
-## What exists today (73 tests)
+## What exists today (218 tests)
 
-### `metronom-core` (65 tests)
+### `metronom-core` engine and helpers (65 tests)
 
 | Module | Tests | What is proven |
 |---|---|---|
@@ -28,6 +28,20 @@ Android and iPhone suites will be added to the same script as those milestones l
 | Visual sync | 7 | `heard_frame` follows the clock from the anchor, can look back, and is negative before the stream is presented; the flash reports the beat being heard and its age; scheduled-but-not-yet-audible beats are ignored; nothing is shown before the first beat is heard; the whole chain with an engine 80 ms ahead gives the beat the ear hears |
 | Tap tempo | 8 | Needs two taps; steady taps give the exact tempo; uneven taps are averaged; only the latest six taps count so the tempo can change; a pause over 2 s or a backwards clock starts over; the result is clamped to 30–300; `reset` |
 | Buffer tuning | 9 | Never grows without underruns; one burst per new underrun; the same count is not counted twice; bursts of underruns grow one step at a time; stops at the maximum and at capacity; AAudio error codes ignored; the stream size is only queried when needed; degenerate input does not panic |
+
+### `metronom-core` library: markdown files, library logic, zip (145 tests)
+
+| Module | Tests | What is proven |
+|---|---|---|
+| Text helpers | 7 | Line endings and byte-order mark; titles compare ignoring case and surrounding spaces; file-name slugs are lowercase ASCII with accents folded (`Blåbærsyltetøy` → `blabaersyltetoy`), never contain path characters, never empty; unique suffixes |
+| Header (`---` block) | 15 | Bare, quoted and commented values; case-insensitive keys, last duplicate wins; no header, unclosed header, empty header; unknown lines kept and reported; **property: any text renders back byte for byte**; setting a value keeps position, spelling and comment; values that need quoting round-trip; a value cannot inject lines; **property: setting one key leaves every other line alone** |
+| Songs table | 21 | The sample table; columns by name in any order; **extra columns, text before and after, and untouched cell spelling survive an edit**; `|` in titles and notes; repeated and empty titles kept in the file but ignored; bad, clamped and missing values with warnings; a file with no table gets one; another kind of table is not mistaken for the song list; Beats/Notes columns added only when needed; uniqueness; rename, remove; **properties: arbitrary text renders back exactly, written songs read back identical, editing one song never changes the others** |
+| Setlists | 20 | Heading, band and songs; list markers and indentation; first list only; code fences; **editing the list keeps header, heading and notes**; reorder, remove, insert, rename song, remove song; name and band changes; new setlist; copy; an unedited setlist moved to a new file name is written as read; **properties: arbitrary text renders back exactly; random edits survive a write and read** |
+| Settings file | 11 | Defaults and the template; every key; bad and out-of-range values with warnings; **only changed keys are written, unknown keys and comments kept**; a file from a newer version is read but never changed |
+| Storage | 5 | Path validation (no `..`, absolute paths, backslashes); memory and disk storage behave the same; no temporary files left; **a failed disk write leaves the old file intact**; simulated interrupted saves |
+| Library | 28 | Opening hand-written files; **nothing written when nothing changed**; a full session saves and reopens; unique titles and non-empty names; **rename a song → renamed in every setlist**; **delete a song → removed from every setlist, with a report**; only existing songs can be added to a setlist; reorder/remove/out-of-range; copy (and copy of a copy); rename keeps the file name; delete a setlist removes its file at the next save and never reuses a pending name; **hand edits survive everything the app does**; missing songs; grouping by band; CRLF and byte-order mark; warnings carry the file name; **an unreadable `songs.md` or setlist is never overwritten**; an interrupted save loses nothing and can be retried; saving twice writes once; a newer settings file is protected; **model-based property test: 64 random sessions of add/edit/delete/reorder/copy/save-and-reopen keep every rule** |
+| Zip reader and writer | 18 | CRC-32 check value; stored and deflated entries; folders skipped; non-zip input; limits applied before anything big is made; **a zip bomb is refused**; encrypted and exotic entries refused; damaged content detected; duplicate names and backslashes refused; **our archives open in the real `unzip`, and archives made by the real `zip` are read**; **properties: arbitrary bytes never panic; a damaged archive never panics and never returns wrong data; any files round-trip** |
+| Archive (export/import) | 20 | Export then import recreates the library byte for byte; only library files are exported; a zipped folder is unwrapped; **path tricks refuse the whole archive and change nothing**; files outside the layout and system files are ignored with a reason; songs skipped or overwritten; setlists skipped, overwritten or kept both; **an imported setlist is written exactly as read**; an import can never overwrite an unreadable file; settings skipped or overwritten, and a newer settings file does not stop the rest; an unreadable `songs.md` stops the import before anything changes; archives beyond the limits refused; **property: any library survives export and import** |
 
 ### `metronom-ffi` (8 tests)
 
@@ -79,9 +93,6 @@ varied by about ±25 ms between samples, so some flash jitter may be visible; th
 
 | Suite | Milestone | Content |
 |---|---|---|
-| Parser and store | M1 | Round-trip golden files for `settings.md`, the `songs.md` table and setlists; unknown-key, extra-column and surrounding-text preservation; duplicate titles; pipes in titles; malformed, empty and binary files; long and Unicode names; property tests and fuzzing of the parsers |
-| Import safety | M1 | Zip-slip (`../` and absolute paths), non-`.md` entries, size and entry-count limits, name collisions, interrupted writes |
-| Library logic | M1 | Renaming a song updates every setlist; deleting a used song; reorder, copy, missing songs; band grouping |
 | Android UI | M2–M3 | Compose tests: type a tempo (valid and invalid), change tempo and beats, save a song, build a setlist, walk through it with Next/Previous, export → import round trip |
 | Binding smoke test | M2 | The Kotlin ↔ Rust call path on a device or emulator |
 | Size gate | M4 | Fails the build if the release APK exceeds 10 MB |
