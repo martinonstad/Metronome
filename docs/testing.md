@@ -13,41 +13,76 @@ This runs `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, the 
 cross-compiled for Android (so the Android-only audio code is checked too) and `cargo test`.
 Android and iPhone suites will be added to the same script as those milestones land.
 
-## What exists today (29 tests)
+## What exists today (73 tests)
 
-### `metronom-core` — buffer tuning (9 tests)
+### `metronom-core` (65 tests)
 
-Never grows without underruns; grows by exactly one burst per new underrun; the same count is
-not counted twice; a burst of underruns grows one step at a time; stops at the maximum and at
-the stream's capacity; AAudio error codes (negative counts) are ignored; the stream's current
-size is only queried when growth is needed; degenerate inputs do not panic.
+| Module | Tests | What is proven |
+|---|---|---|
+| Scheduler | 11 | Beats land on exact frames (120 BPM / 48 kHz: 0, 24 000, 48 000 …); placement and beat numbers are identical for block sizes 1–1024; **one simulated hour** at 97 BPM stays within one frame; beats cycle through the bar, including a 99-beat bar; a tempo change waits for the next beat (no short or doubled beat); **a new bar generation makes the next beat beat 1 with the new tempo applying from it**; shrinking the bar mid-way never emits an out-of-range beat; restart begins a fresh bar; NaN, tempos below 30 or above 300, zero-beat and oversized bars are clamped, not fatal |
+| Synth | 6 | All four sounds at both levels are audible, never clip, end faded out (no trailing tick) and finish within their length; strong > normal for every sound; the sounds are audibly different; a click is bit-identical every time and for block sizes 1–1024; retriggering restarts the voice |
+| Engine (end to end) | 10 | Audio is bit-identical for block sizes 1–4096; the click starts exactly on the beat frame; silence between clicks; the first beat of the bar is louder; output within ±1 and volume scales it; each sound plays and differs; **a song change starts the new song on a strong beat**; every beat is logged for the UI; restart works |
+| Controls | 7 | Defaults; tempo clamped to 30–300 and NaN ignored; beats per bar clamped to 1–99; `restart_bar` is visible to the engine and changes nothing else; sound choice; volume clamping; the snapshot reflects every setting |
+| Settings | 2 | Sound index round-trip with fallback; defaults |
+| Timeline | 6 | Entries round-trip through the packed word (beats up to 99); the newest beat at or before a frame is found; beats the speaker has not reached yet are not returned; only the 64 most recent beats are kept; `clear` forgets a previous stream |
+| Visual sync | 7 | `heard_frame` follows the clock from the anchor, can look back, and is negative before the stream is presented; the flash reports the beat being heard and its age; scheduled-but-not-yet-audible beats are ignored; nothing is shown before the first beat is heard; the whole chain with an engine 80 ms ahead gives the beat the ear hears |
+| Tap tempo | 8 | Needs two taps; steady taps give the exact tempo; uneven taps are averaged; only the latest six taps count so the tempo can change; a pause over 2 s or a backwards clock starts over; the result is clamped to 30–300; `reset` |
+| Buffer tuning | 9 | Never grows without underruns; one burst per new underrun; the same count is not counted twice; bursts of underruns grow one step at a time; stops at the maximum and at capacity; AAudio error codes ignored; the stream size is only queried when needed; degenerate input does not panic |
 
-### `metronom-core` — engine (17 tests)
+### `metronom-ffi` (8 tests)
 
-| Area | What is proven |
+Settings round-trip through the exported object; tempo and bar length are clamped (30–300,
+1–99); switching song changes tempo and bar length without touching the sound; the sound mirror
+enum converts both ways; tapping sets the tempo through the exported object; there is nothing to
+show while stopped; `stop()` is idempotent; starting without an audio backend returns an error
+instead of crashing (host platforms).
+
+### The one-screen main screen on the Pixel 8 Pro (manual, 2026-10-04, debug build)
+
+Driven through the real app with adb (screen taps and UI dumps):
+
+| Check | Result |
 |---|---|
-| Placement | At 120 BPM / 48 kHz pulses start exactly on frames 0, 24 000, 48 000 … |
-| Block independence | Pulse positions are identical for block sizes 1, 7, 64, 480, 513, 1024 and 4096; rendered audio is **bit-identical** for block sizes 1–4096 |
-| Drift | One simulated hour at 97 BPM (an awkward tempo): every pulse is within one frame of its exact time; error does not accumulate |
-| Beats and bars | Beat numbers cycle correctly through a bar (e.g. 3/4) |
-| Live changes | A tempo change lands on the next pulse with no short or doubled beat; `restart` begins a fresh bar immediately |
-| Robustness | NaN and absurd tempos (1e9 BPM) and zero-beat bars are clamped, not fatal |
-| Sound | The click starts at the pulse frame, silence between clicks, downbeat louder, output within ±1, volume scales the output |
-| Controls | Defaults, clamping of tempo/beats/volume, NaN ignored |
+| Everything fits on one screen without scrolling | **Yes**: mode label, beat dots, tempo, slider with −/+, beats per bar, tap tempo and Start were all visible at once |
+| Tap the tempo number, type 88, OK | Tempo became 88 |
+| Type 999, OK | "Enter a tempo from 30 to 300" is shown; Cancel leaves the tempo at 88 |
+| Beats per bar + | 4 → 6 |
+| Drag the slider from 25 % to 75 % of its width | Tempo 228 (30 + 0.75 × 270 ≈ 232) |
+| − button three times | 228 → 225 |
+| Tap tempo | Works, but could not be measured: each `adb input tap` takes a few hundred milliseconds to launch, so taps meant to be 500 ms apart were about 625 ms apart and the tempo came out as 96. Needs a real finger |
+| Start, play 14 s, Stop | Beats cycled 0-1-2-3 correctly; 0 underruns; `delivered` and latency (191 ms) normal; Stop ended the service and silenced the audio |
+| Flash timing, 32 beats at 120 BPM | Spacing between beats on screen: mean 497.6 ms, max 500.2 ms. Age of a beat on the first frame that showed it: 2.5–10 ms in steady state. **The first beat of a run appeared 77 ms late**: the system has no presentation timestamp for the first few tens of milliseconds, so nothing can be shown yet |
 
-### `metronom-ffi` (3 tests)
+Not judged: whether the flash looks in time with the click, how big and easy the targets feel
+when used with a real finger, and tap tempo.
 
-Settings round-trip through the exported object; `stop()` is idempotent; starting without an
-audio backend returns an error instead of crashing (host platforms).
+### Beat flash timing (manual, 2026-10-04, Pixel 8 Pro, debug build, `PowerSaving` mode)
+
+The screen's frame loop calls `visual_state` once per display frame and, in debug builds, logs
+every time the displayed click changes (`adb logcat -s MetronomFlash`), including how old the
+click already was on the first frame that showed it. 34 beats at 120 BPM were captured:
+
+| Check | Result |
+|---|---|
+| Age of a click on the first frame showing it | 6–16 ms: always within one display frame (the phone alternated between 120 Hz and 60 Hz) |
+| Time between consecutive beats on screen | mean 501.8 ms (500 expected); min 491.7 ms; one 558 ms gap between the first two beats, at start-up |
+| **Output latency measured from the stream timestamps** | **190–238 ms** (eight readings, median about 200 ms) |
+
+What this shows: the pipeline from audio timeline to display frame is correct and steady **as
+far as the stream's own timestamps are concerned**. What it does *not* show: whether those
+timestamps match what the speaker really does. That can only be judged by looking and
+listening: **does the flash appear together with the click, or early or late?** If it is
+consistently off, the planned `visual_offset_ms` setting corrects it. The latency readings
+varied by about ±25 ms between samples, so some flash jitter may be visible; this is unjudged.
 
 ## Planned suites
 
 | Suite | Milestone | Content |
 |---|---|---|
-| Parser and store | M1 | Round-trip golden files; unknown-key and comment preservation; malformed, empty and binary files; long and Unicode names; property tests and fuzzing of the parser |
+| Parser and store | M1 | Round-trip golden files for `settings.md`, the `songs.md` table and setlists; unknown-key, extra-column and surrounding-text preservation; duplicate titles; pipes in titles; malformed, empty and binary files; long and Unicode names; property tests and fuzzing of the parsers |
 | Import safety | M1 | Zip-slip (`../` and absolute paths), non-`.md` entries, size and entry-count limits, name collisions, interrupted writes |
-| Engine extensions | M1–M2 | Subdivisions, accent patterns, count-in, tempo ramps if added |
-| Android UI | M2–M3 | Compose tests: change tempo, save a song, build a setlist, export → import round trip |
+| Library logic | M1 | Renaming a song updates every setlist; deleting a used song; reorder, copy, missing songs; band grouping |
+| Android UI | M2–M3 | Compose tests: type a tempo (valid and invalid), change tempo and beats, save a song, build a setlist, walk through it with Next/Previous, export → import round trip |
 | Binding smoke test | M2 | The Kotlin ↔ Rust call path on a device or emulator |
 | Size gate | M4 | Fails the build if the release APK exceeds 10 MB |
 
@@ -153,6 +188,7 @@ screen off, unplugged 18:03:02, replugged 18:35:11; 198 lines recorded.
 | Check | `LowLatency` (above) | `PowerSaving` |
 |---|---|---|
 | Granted | burst 96 frames (2 ms), buffer 384 → 576 | burst 1922 frames (40 ms), buffer 3844 frames (80 ms, the capacity) |
+| Total output latency | not measured at the time | measured later: **190–240 ms** (see below) |
 | On battery, screen off | 30.8 min | 32.0 min |
 | Deep Doze | 29.7 min | **30.5 min** |
 | Service survived | yes | yes (no `service destroyed` line) |
@@ -176,9 +212,11 @@ Reading the results:
 - **Battery drain is not established.** The earlier run did not record the battery level, and
   one percentage point is too coarse. Ten times fewer wake-ups should help, but that is
   expected, not measured.
-- **Costs:** about 80 ms of output latency. It is inaudible for a click, but the visual flash
-  must be derived from the stream's reported latency (planned, Milestone 2) or it will appear
-  early. Start/stop and tempo changes take effect up to about 80 ms late.
+- **Costs:** output latency. The buffer alone is 80 ms, but the *measured* total is
+  **190–240 ms** (an early draft of these notes said "about 80 ms"; that was only the buffer).
+  It is inaudible for a click, but the visual flash has to be derived from the stream's own
+  timestamps or it appears far too early (it now is, see "Beat flash timing" below).
+  Start/stop and tempo changes are heard up to a fifth of a second late.
 - **Not covered:** listening judgement of the run, other devices (a device may not grant
   `PowerSaving` or may use smaller bursts, which is what the buffer tuner is for), headphones,
   Bluetooth, calls.

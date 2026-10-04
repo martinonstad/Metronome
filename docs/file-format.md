@@ -1,14 +1,15 @@
 # File format
 
-Status: **draft v1 — specified, not yet implemented.** This document is the contract between the
+Status: **draft v2 — specified, not yet implemented.** This document is the contract between the
 app and your files. Both the Android and iPhone apps use the same Rust parser, so a library
-exported from one opens unchanged on the other.
+exported from one opens unchanged on the other. It replaces the earlier draft that had one folder
+per project; nothing had been implemented, so there is nothing to migrate.
 
 ## Principles
 
-- **Plain text you can edit.** UTF-8 markdown with a small header of `key: value` lines.
-- **Never lose hand edits.** Unknown keys, comments and the markdown body are preserved when the
-  app saves a file.
+- **Plain text you can edit.** UTF-8 markdown; songs in one table; setlists as numbered lists.
+- **Never lose hand edits.** Unknown keys, extra table columns, comments and surrounding text are
+  preserved when the app saves a file.
 - **Forgiving on read, careful on write.** A bad value falls back to a default and produces a
   warning; it never crashes the app and never silently overwrites your file.
 
@@ -16,74 +17,25 @@ exported from one opens unchanged on the other.
 
 ```
 Metronom/
-  settings.md
-  library/
-    <project-slug>/
-      project.md
-      songs/<song-slug>.md
-      setlists/<setlist-slug>.md
+  settings.md          global settings
+  songs.md             every song, in one table
+  setlists/
+    friday-gig.md      one file per setlist, tagged with a band/project
+    wedding-set.md
 ```
 
-- A **project** is a band or group of songs. Songs not assigned to a project live in an
-  automatic project called `General` (`library/general/`).
-- A **preset** is just a song.
-- The same layout is used inside exported zip files.
-
-## File structure
-
-```
----
-key: value
-other_key: value   # a comment
----
-# Title
-
-Free markdown text.
-```
-
-- The header is optional. It must start on the first line with `---` and end with a line
-  containing only `---`.
-- Everything after the header is the **body** and is kept exactly as written.
-- Files are written with `\n` line endings; `\r\n` is accepted on read.
-
-### Header syntax
-
-| Element | Rule |
-|---|---|
-| Entry | `key: value`, one per line. Keys are lowercase `snake_case` |
-| Comment | `#` at the start of a line, or after whitespace following a value |
-| Integer / decimal | `120`, `97.5` |
-| Boolean | `true` or `false` |
-| Text | Bare (`wood`) or double-quoted (`"Intro: slow"`) when it contains `#` or leading/trailing spaces |
-| List | Space-separated tokens (`X o o o`) |
-| Duplicate key | The last one wins; a warning is reported |
-| Unknown key | Preserved, ignored |
-
-### Titles
-
-The title of a song, setlist or project is the first level-1 heading (`# Title`) in the body. If
-there is none, the file name (without `.md`) is used. The **file name is the identifier**; the
-title is what is shown.
-
-### File names (slugs)
-
-Generated names are lowercase ASCII: accents are folded (`é` → `e`, `ø` → `o`), every run of
-other characters becomes `-`, and a collision gets a numeric suffix (`my-song-2`). Files you
-create by hand may use any valid name ending in `.md`.
+The same layout is used inside exported zip files.
 
 ## `settings.md`
 
 ```markdown
 ---
-format: 1
+format: 2
 sound: wood
 volume: 0.8
-flash: edge            # full | edge | dots | off
-flash_intensity: 0.6
-haptics: false
 keep_screen_on: true
 visual_offset_ms: 0
-last_project: the-band
+last_setlist: friday-gig
 ---
 # Settings
 Edit the values above. Unknown keys are kept.
@@ -91,85 +43,111 @@ Edit the values above. Unknown keys are kept.
 
 | Key | Type / range | Default | Meaning |
 |---|---|---|---|
-| `format` | integer | `1` | File-format version, for future migrations |
-| `sound` | `click` `wood` `beep` `rim` | `click` | Default click sound |
+| `format` | integer | `2` | File-format version, for future migrations |
+| `sound` | `click` `wood` `beep` `rim` | `click` | The click sound |
 | `volume` | 0.0 – 1.0 | `0.8` | Output level |
-| `flash` | `full` `edge` `dots` `off` | `edge` | Visual beat style |
-| `flash_intensity` | 0.0 – 1.0 | `0.6` | Strength of the flash |
-| `haptics` | boolean | `false` | Vibrate on the downbeat |
-| `keep_screen_on` | boolean | `true` | Keep the display awake while playing |
-| `visual_offset_ms` | −500 – 500 | `0` | Shift the blink relative to the sound (Bluetooth compensation) |
-| `last_project` | project slug | none | Project shown on launch |
+| `keep_screen_on` | boolean | `true` | Keep the display awake while a setlist is open or playing |
+| `visual_offset_ms` | −500 – 500 | `0` | Shift the flash relative to the sound (Bluetooth or timing correction) |
+| `last_setlist` | setlist file name (no `.md`) | none | Setlist reopened on launch |
 
-## Songs — `library/<project>/songs/<song>.md`
+### Header syntax (also used by setlists)
 
-A song is a saved metronome configuration plus notes.
+| Element | Rule |
+|---|---|
+| Header | Optional. Starts on the first line with `---` and ends at the next line containing only `---` |
+| Entry | `key: value`, one per line; keys are lowercase `snake_case` |
+| Comment | `#` at the start of a line, or after whitespace following a value |
+| Number | `120`, `97.5` |
+| Boolean | `true` or `false` |
+| Text | Bare (`The Band`) or double-quoted (`"Intro: slow"`) when it contains `#` or leading/trailing spaces |
+| Duplicate key | The last one wins; a warning is reported |
+| Unknown key | Preserved, ignored |
+
+Everything after the header is the **body** and is kept exactly as written. Files are written
+with `\n` line endings; `\r\n` is accepted on read.
+
+## `songs.md`
+
+Every song, in one markdown table:
 
 ```markdown
----
-bpm: 75
-time: 4/4
-subdivision: 1         # clicks per pulse: 1, 2 (eighths), 3 (triplets), 4 (sixteenths)
-accents: X o o o       # X strong · o normal · - muted, one token per pulse
-count_in: 1            # bars of count-in before the song
-sound: wood            # optional, overrides settings.md
----
-# Hotel California
+# Songs
 
-Key: Bm · Capo 7 · Intro 8 bars
+| Song             | BPM | Beats | Notes      |
+|------------------|-----|-------|------------|
+| Hotel California |  75 |     4 | Bm, capo 7 |
+| Superstition     | 100 |     4 |            |
+| Waltz for Debby  | 132 |     3 |            |
 ```
 
-| Key | Type / range | Default | Meaning |
-|---|---|---|---|
-| `bpm` | 20 – 400, decimals allowed | `120` | Pulses per minute (see below) |
-| `time` | `N/D`: N 1–16, D one of 2, 4, 8, 16 | `4/4` | Time signature |
-| `subdivision` | 1 – 4 | `1` | Clicks per pulse |
-| `accents` | `X`, `o`, `-` tokens | derived from `time` | Accent of each pulse in the bar |
-| `count_in` | 0 – 4 | `0` | Count-in bars |
-| `sound` | as in settings | from settings | Click sound |
+| Column | Required | Meaning |
+|---|---|---|
+| `Song` | yes | The title; this is how setlists refer to the song |
+| `BPM` | yes | Tempo, 30–300. Decimals are allowed (`97.5`); the app shows it rounded |
+| `Beats` | no, default `4` | Beats per bar, 1–99. The first beat of each bar is accented |
+| `Notes` | no | Free text (key, capo, intro length) |
 
-- **Pulses.** `bpm` counts pulses of the denominator note: `6/8` at `120` is 120 eighth-note
-  pulses per minute.
-- **Accents.** The number of tokens must equal the time signature's numerator. On a mismatch the
-  app falls back to the default grouping for that signature and reports a warning. Defaults:
-  strong first pulse, normal elsewhere; `6/8` also accents pulse 4, `9/8` pulses 4 and 7,
-  `12/8` pulses 4, 7 and 10.
-- A missing or invalid value uses its default.
+Rules:
 
-## Setlists — `library/<project>/setlists/<setlist>.md`
+- The first table in the file is the song list. Text before and after it (headings, paragraphs)
+  is preserved.
+- Columns are found by their header names, ignoring case and order. **Extra columns are
+  preserved** and shown nowhere.
+- A `|` inside a title or note is written `\|`.
+- **Titles are unique**, compared ignoring case and surrounding spaces. If a title appears
+  twice, the first row wins and a warning is reported; the other row is kept in the file.
+- A row without a title is ignored (with a warning) and kept in the file. A `BPM` outside 30–300
+  is clamped, and a missing or invalid `Beats` becomes 4, each with a warning.
+- The order of the rows is the order in the app's song list. The app writes the table with
+  aligned columns, but any valid markdown table is accepted.
 
-An ordered list of songs. Each entry is a numbered or bulleted item containing a `[[link]]`.
+## Setlists — `setlists/<name>.md`
+
+One file per setlist:
 
 ```markdown
+---
+band: The Band
+---
 # Friday Gig
-1. [[Hotel California]]
-2. [[Wonderwall]]
-3. [[other-band/Another Song]]
+
+1. Hotel California
+2. Superstition
+3. Waltz for Debby
 
 Soundcheck at 18:00.
 ```
 
-- `[[Name]]` matches a song in the **same project** by title or file name, ignoring case.
-- `[[project/Name]]` matches a song in another project (project slug, then title or file name).
-- A link that matches nothing is kept in the file and shown as a missing song; it is never
-  deleted automatically.
-- Lines that are not list items are notes and are preserved.
+| Part | Meaning |
+|---|---|
+| `band` (header) | The band or project the setlist belongs to. Optional; a setlist without one is grouped under "No band" |
+| First `# heading` | The setlist's name. If there is none, the file name (without `.md`) is used |
+| Numbered or bulleted list items | The songs, in order. Each item's text is a song title from `songs.md` |
+| Other lines | Notes; preserved |
 
-## Projects — `library/<project>/project.md`
+Rules:
 
-```markdown
-# The Band
+- A song title is matched against `songs.md` **ignoring case and surrounding spaces**. A title
+  that matches nothing is shown as a **missing song** and kept in the file; it is never deleted
+  automatically.
+- The same song may appear more than once in a setlist.
+- Renaming a song in the app updates every setlist that uses it. A rename done by hand-editing
+  `songs.md` is not tracked: the setlists then show the old title as a missing song.
+- A setlist stores only titles. It has no tempo of its own; the tempo and beats come from the
+  song.
+- The app writes the list renumbered (`1.`, `2.`, …); hand-written bullets (`-`) are accepted.
 
-Rehearsal Tuesdays. Drummer: Anna.
-```
+### File names (slugs)
 
-A title and notes only; no header keys are defined for projects or setlists yet, so the header is
-omitted.
+Generated names are lowercase ASCII: accents are folded (`é` → `e`, `ø` → `o`), every run of
+other characters becomes `-`, and a collision gets a numeric suffix (`friday-gig-2`). Copying a
+setlist creates `<name>-copy.md` titled "<name> (copy)". Files you create by hand may use any
+valid name ending in `.md`.
 
 ## Round-trip and write rules
 
-- Saving a file rewrites only the keys the app owns; every other line of the header (unknown keys,
-  comments) and the whole body are written back exactly as read.
+- Saving a file rewrites only what the app owns; every other line of a header (unknown keys,
+  comments), every extra table column, and all surrounding text are written back exactly as read.
 - Writes are atomic: the app writes a temporary file and renames it over the target, so a crash
   cannot leave a half-written file.
 - If a file cannot be parsed at all (for example, binary data), it is left untouched and listed
@@ -177,13 +155,15 @@ omitted.
 
 ## Export and import
 
-- **Export** produces a `.zip` of the layout above (a whole library or one project).
-- **Import** accepts the same layout and asks, per conflict, to skip, overwrite or keep both.
+- **Export** produces a `.zip` of the layout above.
+- **Import** accepts the same layout. `settings.md` and each setlist file can be skipped,
+  overwritten, or kept as a second copy. For `songs.md` the default is to **add songs whose titles
+  are not yet in the app**; songs with the same title can be skipped or overwritten.
 - Import is defensive: it rejects entries with absolute paths or `..` segments (zip-slip), only
-  accepts `.md` files, and refuses archives over the planned limits of 5,000 entries, 1 MB per
-  file and 50 MB in total. All of this will be covered by tests.
+  accepts `.md` files in the layout above, and refuses archives over the planned limits of 1,000
+  entries, 1 MB per file and 20 MB in total. All of this will be covered by tests.
 
 ## Versioning
 
-`format` in `settings.md` is the format version (absent means 1). A newer app reading an older
+`format` in `settings.md` is the format version (absent means 2). A newer app reading an older
 library migrates on save; an older app reading a newer `format` opens files read-only and warns.

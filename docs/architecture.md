@@ -40,20 +40,27 @@ Located in `core/metronom-core/src/engine/`.
 
 | Piece | File | Role |
 |---|---|---|
-| `Scheduler` | `scheduler.rs` | Decides on which audio frame each pulse (beat) starts. Pure timing, no audio |
-| `Synth` | `synth.rs` | Generates the click: a short sine burst with a 0.5 ms attack and exponential decay; 1600 Hz on the downbeat, 1000 Hz (quieter) on other beats |
-| `Controls` | `controls.rs` | Atomics holding tempo, beats per bar and volume, shared between the UI and the audio thread. Clamps values and ignores NaN |
-| `Engine` | `mod.rs` | Combines the above: `render(&mut [f32], timing, volume)` fills a buffer; no allocation, no locks |
+| `Scheduler` | `scheduler.rs` | Decides on which audio frame each beat starts (`Beat`: the beat's index in the bar). Pure timing, no audio |
+| `Synth` | `synth.rs` | Generates the click from a per-sound recipe: a sine burst with an attack, exponential decay, optional pitch sweep and noise, and a 2 ms fade-out so it never ends with a tick. Four sounds (click, wood, beep, rim), each with two levels: strong (first beat of the bar) and normal |
+| `Settings`, `Sound` | `settings.rs` | The values the engine reads each audio callback: timing, sound, volume |
+| `Controls` | `controls.rs` | Atomics holding tempo, beats per bar, a "bar generation" counter, sound and volume, shared between the UI and the audio thread. Clamps values and ignores NaN. `settings()` takes one consistent snapshot per audio callback |
+| `Timeline` | `timeline.rs` | A lock-free log of recent beats, so the UI can show what is being heard (see Visual synchronisation) |
+| `Engine` | `mod.rs` | Combines the above: `render(&mut [f32], &Settings)` fills a buffer; no allocation, no locks |
 
 ### Timing accuracy
 
-- The next pulse's position is kept as an **f64 frame position** and advanced by
-  `sample_rate × 60 / bpm` per pulse. Tempos that do not divide the sample rate evenly (e.g. 97
+- The next beat's position is kept as an **f64 frame position** and advanced by
+  `sample_rate × 60 / bpm` per beat. Tempos that do not divide the sample rate evenly (e.g. 97
   BPM) therefore never accumulate rounding error.
-- A pulse starts on the first whole frame at or after its exact time (`ceil`), so error per pulse
+- A beat starts on the first whole frame at or after its exact time (`ceil`), so error per beat
   is under one frame (about 21 µs at 48 kHz) and does not accumulate.
-- The tempo is read **when a pulse fires**, so a tempo change takes effect from the next pulse and
-  never produces a short or doubled beat. Changing the time signature works the same way.
+- The tempo that applies to the gap *after* a beat is the one in force when that beat starts, so
+  a tempo change takes effect from the next beat and never produces a short or doubled beat. If
+  the bar length is shortened mid-bar, the bar rolls over at the next beat so a beat outside the
+  new bar is never played.
+- **Song changes.** `Controls::restart_bar` bumps a counter; when the scheduler sees it change at
+  a beat, that beat becomes beat 1 (the accented one) of a new bar. The tempo change applies
+  from that beat on, so a new song starts on its downbeat without a stumble.
 - Output depends only on how many frames a click has played, never on how the stream is split
   into callback blocks. A test renders the same audio with block sizes from 1 to 4096 frames and
   requires bit-identical results.
@@ -68,9 +75,10 @@ The audio callback must never wait. In the engine and the Android callback:
 
 ### Conventions
 
-- BPM counts **pulses of the time signature's denominator note**. 6/8 at 120 BPM is 120
-  eighth-note pulses per minute. Accent patterns express compound grouping (e.g. `X o o X o o`).
-- Ranges: 20–400 BPM, 1–16 beats per bar. Out-of-range input is clamped, never rejected.
+- **Tempo** is 30–300 beats per minute. **Beats per bar** is 1–99; the first beat of each bar is
+  the strong click, all others are normal. There is no time-signature denominator, subdivision,
+  count-in or per-beat accent: see [design.md](design.md) for why.
+- Out-of-range input is clamped (typed tempos in the UI are rejected with a message instead).
 
 ## Audio output on Android (built, tested on one device)
 
@@ -79,7 +87,7 @@ The audio callback must never wait. In the engine and the Android callback:
 | Setting | Value | Why |
 |---|---|---|
 | Direction / format | Output, 32-bit float, 2 channels (mono click duplicated) | Float avoids conversion; stereo is the safest universally supported layout |
-| Performance mode | **Power saving** | A metronome is not interactive, so it does not need low latency. Power saving uses larger hardware bursts and about a tenth of the CPU wake-ups (on the Pixel 8 Pro: about 50 callbacks a second instead of 500). Measured on that phone: 0 underruns in 32 minutes on battery, versus 4 underruns per run with low latency (see [testing.md](testing.md#measured-results)). The cost is about 80 ms of output latency, which the visual flash must compensate for |
+| Performance mode | **Power saving** | A metronome is not interactive, so it does not need low latency. Power saving uses larger hardware bursts and about a tenth of the CPU wake-ups (on the Pixel 8 Pro: about 50 callbacks a second instead of 500). Measured on that phone: 0 underruns in 32 minutes on battery, versus 4 underruns per run with low latency (see [testing.md](testing.md#measured-results)). The cost is output latency: measured at **190–240 ms** on the Pixel 8 Pro (the 80 ms buffer plus the rest of the audio path), which the visual flash compensates for using the stream's own timestamps (see Visual synchronisation) |
 | Sharing mode | Shared | Exclusive can fail on some devices, and nothing here needs it |
 | Sample rate | The device's native rate, passed in by the Kotlin side (`AudioManager`) | Avoids resampling, which adds latency; falls back to 48 kHz |
 | Buffer size | Starts at 4 bursts (never more than the stream's capacity); grows by one burst each time the device underruns, up to 12 bursts | An underrun is an audible glitch; a few extra milliseconds are not. In power-saving mode on the Pixel 8 Pro the burst is 1922 frames (40 ms) and the buffer starts at its 3844-frame capacity (80 ms), so the tuner has no room to grow there; it matters on devices that grant smaller bursts, and it was exercised with the low-latency mode (buffer 384 → 576 frames after an underrun) |
@@ -119,7 +127,12 @@ The exported `Metronome` object:
 |---|---|
 | `start(sample_rate)` / `stop()` / `is_running()` | Control playback |
 | `bpm()` / `set_bpm()` | Tempo |
-| `beats_per_bar()` / `set_beats_per_bar()` | Time-signature numerator |
+| `beats_per_bar()` / `set_beats_per_bar()` | Beats per bar, 1–99 |
+| `restart_bar()` | The next beat becomes beat 1 of a new bar (call on a song change) |
+| `sound()` / `set_sound()` | One of four synthesized sounds |
+| `visual_state(now_nanos)` | The beat being heard now and its age, for the flash (once per display frame) |
+| `output_latency_ms(now_nanos)` | Measured output latency |
+| `tap(now_nanos)` | Tap tempo: returns and applies the new tempo |
 | `volume()` / `set_volume()` | Output level |
 | `diagnostics()` | One-line stream description |
 
@@ -127,12 +140,19 @@ Bindings are generated from the **host** build of the library (`libmetronom_ffi.
 Android `.so`, because release builds are stripped and UniFFI's library mode needs the metadata
 symbols. The exported interface is identical on every target.
 
-## Android app (spike built; features planned)
+## Android app (main screen built; library planned)
 
-Built (Milestone 0 spike, run on a Pixel 8 Pro; see [testing.md](testing.md#measured-results)): `MetronomApp` holds the single
-`Metronome`; `PlaybackService` owns playback; `MainActivity` and `MetronomeScreen` offer
-start/stop, tempo ±1/±5, beats per bar and a diagnostics line. Everything else below is planned.
+Built (see [testing.md](testing.md#measured-results) for what has been measured on a phone):
+`MetronomApp` holds the single `Metronome`; `PlaybackService` owns playback; `MainActivity` and
+`MetronomeScreen` are the one-screen manual metronome described in [design.md](design.md): a
+flash bar and beat dots, the tempo number (tap to type) with a slider and −/+, beats per bar, tap
+tempo and Start/Stop. It has been run on the Pixel 8 Pro and its controls checked with adb; the
+results are in [testing.md](testing.md#the-one-screen-main-screen-on-the-pixel-8-pro-manual-2026-10-04-debug-build).
 
+Planned:
+
+- Setlist/gig mode, the songs and setlists screens and the settings screen
+  ([roadmap.md](roadmap.md), Milestone 3).
 - The `Metronome` object lives in the `Application` and is owned by a **foreground service**
   (`mediaPlayback` type) so playback survives the screen locking and the activity going away.
   Apps that target Android 17 (API 37) must run a foreground service to play audio in the
@@ -145,27 +165,42 @@ start/stop, tempo ±1/±5, beats per bar and a diagnostics line. Everything else
 - ABI: arm64-v8a only. 32-bit ARM and x86 devices are not supported.
 - No `INTERNET` permission, ever.
 
-## Visual synchronisation (planned)
+## Visual synchronisation (built; timing verified on one device, alignment by eye pending)
 
-The blink must be locked to the *sound*, not to a UI timer.
+The blink must be locked to the *sound*, not to a UI timer, because the audio reaches the
+speaker well after the engine renders it (190–240 ms in power-saving mode on the Pixel 8 Pro).
 
-1. The audio callback records recent pulses `(frame, beat)` in a small lock-free ring buffer and
-   publishes the number of frames rendered.
-2. On every display frame (Choreographer) the UI estimates the frame currently being *heard*:
-   frames rendered minus the output latency reported by AAudio's timestamps.
-3. The newest pulse at or before that frame decides which beat is lit and how far its flash has
-   decayed.
-4. A user setting, `visual_offset_ms`, shifts the result to compensate for Bluetooth headphones.
+1. **Timeline** (`engine/timeline.rs`): the audio thread logs every beat it schedules into a
+   small lock-free ring of 64 entries (frame and beat index), each packed into one atomic word.
+   Nothing waits on anything.
+2. **Anchor**: Android reports "stream frame F is presented at time T"
+   (`AAudioStream_getTimestamp`, `CLOCK_MONOTONIC`). From it, `sync::heard_frame` works out which
+   frame is reaching the speaker *now*: `F + (now − T) × sample rate`.
+3. **Lookup**: `sync::flash_at` returns the newest beat at or before that frame and how many
+   milliseconds ago it became audible. Beats the engine has already scheduled but the speaker
+   has not reached yet are ignored.
+4. **Display**: `Metronome::visual_state(now_nanos)` is called once per display frame with the
+   Compose frame time (the same monotonic clock). The UI draws the flash from `since_ms` with a
+   fast decay; the first beat of the bar flashes brighter.
+5. A user setting, `visual_offset_ms`, will shift the result to correct for Bluetooth headphones
+   or any systematic error in the reported timestamps (planned, not built).
 
-Flash styles (full screen, edge glow, dots only) and an intensity setting exist because fast
-tempos can flash at about 5 Hz, which can be uncomfortable for photosensitive users.
+The whole chain except the platform timestamp is pure Rust, tested on the host. The flash is a
+bar across the top plus one dot per beat; other flash styles were considered and are not wanted.
+
+**Tap tempo** (`tap.rs`) is also pure Rust: the average interval over the last six taps, a
+measurement restarts after a 2 s pause or a clock that goes backwards, and the result is
+clamped to 30–300 BPM.
 
 ## Storage (planned)
 
 Markdown files in the app's private storage, behind a small storage interface (read, write,
-list, delete) so a visible/shared folder can be added later without touching the parser.
-Export/import moves a zip of the same layout. Details and rules are in
-[file-format.md](file-format.md).
+list, delete) so a visible/shared folder can be added later without touching the parser. The
+layout is `settings.md`, one `songs.md` table holding every song, and one file per setlist in
+`setlists/`, each tagged with a band/project. Export/import moves a zip of the same layout.
+Details and rules are in [file-format.md](file-format.md); the screens that edit these files are
+in [design.md](design.md). All logic (parsing, renaming a song everywhere it is used, reordering,
+copying) lives in `metronom-core` so both platforms behave identically.
 
 ## Build and size
 
@@ -180,8 +215,8 @@ Export/import moves a zip of the same layout. Details and rules are in
 | Rust core + native UIs | Sample-accurate timing without GC pauses, tiny binaries, and one tested implementation of logic and file handling for both platforms |
 | `ndk` crate AAudio instead of `cpal` | `cpal` on Android needs the JavaVM context handed to it; the `ndk` crate talks to AAudio directly with no JNI setup. The output sits behind a tiny interface, so it can be swapped |
 | Sounds synthesized in code | No audio assets, a smaller app, and the click is identical on every device |
-| A preset is just a song | One concept instead of two; songs outside any band live in an automatic "General" project |
-| Hand-written front-matter parser (planned) | Predictable, tiny, and able to preserve unknown keys and comments; a full YAML library is unnecessary |
+| One list of songs, setlists tagged with a band | Matches how a band works (a song is played in many sets), keeps songs from being duplicated per band, and makes the file layout flat and easy to hand-edit |
+| Hand-written front-matter and table parser (planned) | Predictable, tiny, and able to preserve unknown keys, extra columns and comments; a full YAML library is unnecessary |
 | Private storage + export/import | Simplest and most robust for v1; in-app "edit as markdown" keeps files hand-editable |
 
 Rejected stacks:

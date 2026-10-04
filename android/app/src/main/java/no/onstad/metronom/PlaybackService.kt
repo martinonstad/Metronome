@@ -32,7 +32,9 @@ class PlaybackService : Service() {
   private val logDiagnostics =
     object : Runnable {
       override fun run() {
-        val line = metronomApp.metronome.diagnostics()
+        val metronome = metronomApp.metronome
+        val latency = metronome.outputLatencyMs(System.nanoTime())
+        val line = "${metronome.diagnostics()}, latency ${latency?.let { "%.0f".format(it) } ?: "?"} ms"
         Log.i(TAG, line)
         if (tick++ % FILE_EVERY_N_TICKS == 0) appendToDiagnosticsFile(line)
         handler.postDelayed(this, DIAGNOSTICS_INTERVAL_MS)
