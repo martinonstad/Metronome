@@ -109,24 +109,64 @@ What this does and does not show:
   10-minute run.
 - **Open issue:** 4 underruns in 10 minutes means the 4 ms buffer (2 bursts) had too little
   slack on this device under some conditions. Each underrun can be an audible glitch.
-- **Fix implemented, not yet re-measured:** the buffer now starts at 4 bursts (about 8 ms) and
-  grows by one burst whenever the underrun count rises (see
-  [architecture.md](architecture.md#audio-output-on-android-built-tested-on-one-device)). A
-  short run confirmed the 384-frame start; the long run below still has to be repeated.
+- **Fix implemented:** the buffer now starts at 4 bursts (about 8 ms) and grows by one burst
+  whenever the underrun count rises (see
+  [architecture.md](architecture.md#audio-output-on-android-built-tested-on-one-device)). Its
+  effect is measured in the battery run below.
 
-### Battery run (hands-off, unplugged) — to do
+### Battery run, 4-burst starting buffer — 2026-10-04, 32 minutes
 
-Goal: show behaviour with Doze and battery saving active, which USB power prevents.
+Same phone and debug build, hands-off. Playback was started on USB power, the screen was
+switched off, and the cable was unplugged (17:18:32 phone time) and replugged 31 minutes later
+(17:49:29). The app recorded a line every 10 seconds (`files/diagnostics.log`, 191 lines).
+
+| Check | Result |
+|---|---|
+| On battery with the screen off | `charging=false` and `interactive=false` for 30.8 minutes |
+| Deep Doze | `doze=true` from 17:19:42 until the cable was replugged: **29.7 minutes in deep Doze** |
+| Service survival | Still running at the end; no `service destroyed` line; no non-`Started` state |
+| Audio thread never stalled | **All 190 ten-second intervals contained 5012–5029 callbacks** (about 5000 expected; none fell short). Overall rate 500.04 per second |
+| Timestamps | Continuous; longest gap 11 s. (Timestamps have whole-second resolution, so a per-interval rate computed from them swings between 456 and 503; the callback counts above are the reliable measure) |
+| **Underruns** | **4 underruns at 17:26:04, in deep Doze, 6.4 minutes after Doze began.** The tuner reacted in the same interval: buffer 384 → 576 frames (4 → 6 bursts, about 12 ms). **No further underruns in the remaining 23 minutes** |
+
+What this shows and does not show:
+
+- **Shown:** on battery, in deep Doze, the foreground service and the audio thread keep running
+  with a steady callback rate for half an hour, and the tuner grows the buffer when the device
+  underruns.
+- **Not fixed:** underruns still happened once, with a buffer already doubled from the first
+  run, so at least one glitch was probably audible. It is the same count (4), and again a few
+  minutes after the screen went off, as in the first run, which points to a recurring
+  stall of more than 8 ms rather than random noise. **The cause is unknown.** Hypotheses
+  (untested): deep CPU idle states or frequency scaling while the screen is off, or a periodic
+  system task.
+- **Not established:** whether growing to 576 frames is what kept the remaining 23 minutes
+  clean, or whether the stall simply did not recur. One run on one device cannot say.
+- **Not covered:** listening judgement of the run, other devices, headphones, calls.
+
+### Next experiment (proposed, not done)
+
+Try `PowerSaving` performance mode instead of `LowLatency`. A metronome does not need low
+latency, and this mode uses larger hardware bursts and far fewer wake-ups (the current stream
+wakes the CPU 500 times a second), which should both reduce the chance of a missed deadline and
+use less battery during long rehearsals. The blink stays in sync because it is derived from the
+stream's reported latency. Repeat the same battery run and compare underruns, callbacks per
+second and, if possible, battery drain.
+
+### How to repeat a battery run
 
 1. Debug build installed; start playback from the app, then switch the screen off.
 2. Unplug the USB cable. Leave the phone untouched and stationary for at least 30 minutes.
 3. Plug it back in and read the record (the app writes it every 10 seconds):
    `adb shell run-as no.onstad.metronom cat files/diagnostics.log`
-4. Pass criteria: the timestamps are continuous (no gap of more than about 10–20 seconds), the
-   callback counter advances by about 500 per second, `charging=false` and `interactive=false`
-   throughout, the last line is still a normal diagnostics line (a `service destroyed` line means
-   the service stopped; no closing line at all means the system killed the process), and the
-   underrun count stays at or near 0. `doze=true` appearing shows deep Doze was in effect.
+4. Check: timestamps continuous (a gap of 11 s is normal), every 10-second interval advances the
+   callback counter by about 5000, `charging=false` and `interactive=false` throughout, the last
+   line is a normal diagnostics line (a `service destroyed` line means the service stopped; no
+   closing line means the system killed the process), and the underrun count stays at or near 0.
+   `doze=true` shows deep Doze was in effect.
+5. Stop playback and check it really stopped (no service record, no further diagnostics lines).
+   With the phone locked, `adb shell am force-stop no.onstad.metronom` works; the service is not
+   exported, so `am stopservice` does not.
 
 ## iPhone
 

@@ -23,8 +23,11 @@ until a device is available).
       low-latency stream granted, audio callbacks steady for 10 minutes with the screen off, but
       4 underruns occurred and the run was on USB power. See
       [testing.md](testing.md#measured-results). Adaptive buffer growth (starting at 4 bursts) is
-      implemented and unit-tested. Remaining: repeat the run, on battery, and with a listening
-      check.*
+      implemented and unit-tested. A 32-minute run on battery, 30 minutes of it in deep Doze,
+      kept the audio thread and service running with no stalls, but still had 4 underruns
+      (the buffer then grew by itself and the next 23 minutes were clean). Remaining: understand
+      or eliminate those underruns (proposed next experiment: `PowerSaving` performance mode)
+      and a listening check.*
 
 ### M1 — Core in Rust
 
