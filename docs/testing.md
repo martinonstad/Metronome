@@ -81,7 +81,7 @@ when used with a real finger, and tap tempo.
 ### The songs screens on the Pixel 8 Pro (manual, 2026-10-04, debug build)
 
 Driven through the real app with adb, reading the files straight off the phone
-(`adb shell run-as no.onstad.metronom cat files/Metronom/songs.md`):
+(`adb shell run-as io.github.martinonstad.metronom.debug cat files/Metronom/songs.md`):
 
 | Check | Result |
 |---|---|
@@ -451,7 +451,7 @@ Reading the results:
 1. Debug build installed; start playback from the app, then switch the screen off.
 2. Unplug the USB cable. Leave the phone untouched and stationary for at least 30 minutes.
 3. Plug it back in and read the record (the app writes it every 10 seconds):
-   `adb shell run-as no.onstad.metronom cat files/diagnostics.log`
+   `adb shell run-as io.github.martinonstad.metronom.debug cat files/diagnostics.log`
 4. Check: timestamps continuous (a gap of 11 s is normal), every 10-second interval advances
    `delivered` by about 480 000 frames (10 s × 48 kHz), `charging=false` and `interactive=false`
    throughout, the last line is a normal diagnostics line (a `service destroyed` line means the
@@ -459,7 +459,7 @@ Reading the results:
    stays at or near 0. `doze=true` shows deep Doze was in effect. (Runs before 2026-10-04 evening
    have no `delivered` field; use the callback counter for those.)
 5. Stop playback and check it really stopped (no service record, no further diagnostics lines).
-   With the phone locked, `adb shell am force-stop no.onstad.metronom` works; the service is not
+   With the phone locked, `adb shell am force-stop io.github.martinonstad.metronom.debug` works; the service is not
    exported, so `am stopservice` does not.
 
 ## iPhone
