@@ -193,6 +193,8 @@ pub struct SettingsRecord {
     pub sound: Sound,
     pub volume: f32,
     pub keep_screen_on: bool,
+    /// Play together with other apps' audio instead of taking the audio focus.
+    pub mix_with_other_audio: bool,
     pub visual_offset_ms: i32,
     pub last_setlist: Option<String>,
 }
@@ -203,6 +205,7 @@ impl From<&AppSettings> for SettingsRecord {
             sound: s.sound.into(),
             volume: s.volume,
             keep_screen_on: s.keep_screen_on,
+            mix_with_other_audio: s.mix_with_other_audio,
             visual_offset_ms: s.visual_offset_ms,
             last_setlist: s.last_setlist.clone(),
         }
@@ -215,6 +218,7 @@ impl From<SettingsRecord> for AppSettings {
             sound: r.sound.into(),
             volume: r.volume,
             keep_screen_on: r.keep_screen_on,
+            mix_with_other_audio: r.mix_with_other_audio,
             visual_offset_ms: r.visual_offset_ms,
             last_setlist: r.last_setlist,
         }

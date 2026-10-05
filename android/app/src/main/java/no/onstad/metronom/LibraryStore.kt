@@ -19,7 +19,7 @@ import uniffi.metronom_ffi.Sound
 import uniffi.metronom_ffi.WarningRecord
 
 /** The settings of a library whose `settings.md` has never been changed (the same defaults as in Rust). */
-internal val DEFAULT_SETTINGS = SettingsRecord(Sound.CLICK, 0.8f, true, 0, null)
+internal val DEFAULT_SETTINGS = SettingsRecord(Sound.CLICK, 0.8f, true, false, 0, null)
 
 /** The result of a change: the value, or a message the screen can show. */
 sealed interface Outcome<out T> {

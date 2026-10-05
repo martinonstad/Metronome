@@ -68,7 +68,14 @@ class MainActivity : ComponentActivity() {
           onOpenSetlists = { screen = Screen.Setlists },
           onOpenSettings = { screen = Screen.Settings },
         )
-      Screen.Settings -> SettingsScreen(store = library, metronome = metronome, onBack = { screen = Screen.Manual })
+      Screen.Settings ->
+        SettingsScreen(
+          store = library,
+          metronome = metronome,
+          onBack = { screen = Screen.Manual },
+          onOpenAbout = { screen = Screen.About },
+        )
+      Screen.About -> AboutScreen(onBack = { screen = Screen.Settings })
       Screen.Setlists ->
         SetlistsScreen(
           store = library,

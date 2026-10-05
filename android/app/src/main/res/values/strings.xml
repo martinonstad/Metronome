@@ -132,4 +132,14 @@
     <string name="start_refused">Couldn\'t start: another app or a call is using the audio.</string>
     <string name="start_failed">Couldn\'t start the click: the audio output could not be opened.</string>
     <string name="gig_position_description">Song %1$d of %2$d</string>
+    <string name="settings_mix">Play together with other audio</string>
+    <string name="settings_mix_hint">Off: the click takes the audio, pausing music apps, and stops when a call or another app takes it. On: other apps keep playing and the click is not stopped by them.</string>
+    <string name="about">About</string>
+    <string name="about_open">About, privacy and licenses</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_license">Free software under the MIT License. © 2026 Martin Onstad.</string>
+    <string name="about_privacy_title">Privacy</string>
+    <string name="about_privacy">Metronom works entirely on this phone. It has no internet access and collects no data. Your songs, setlists and settings are plain files in the app\'s private folder, and the only files that leave it are the zips you export yourself. If Android\'s device backup is switched on in your phone\'s settings, Android itself may copy that folder to your Google account when it backs up the phone; the app takes no part in that.</string>
+    <string name="about_libraries">Libraries inside the app</string>
+    <string name="about_libraries_hint">Their licenses ask for these notices to come with the app. Tap a line to read it.</string>
 </resources>

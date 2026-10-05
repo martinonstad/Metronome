@@ -217,6 +217,7 @@ pub fn import(
 
     let mut settings: Option<SettingsDoc> = None;
     let mut songs: Option<SongsDoc> = None;
+    let mut songs_text: Option<String> = None;
     let mut setlists: Vec<SetlistDoc> = Vec::new();
     for (name, data) in wanted {
         let Some(kind) = classify(&name) else {
@@ -233,7 +234,10 @@ pub fn import(
         let mut problems: Vec<Problem> = Vec::new();
         match kind {
             Kind::Settings => settings = Some(SettingsDoc::parse(&text, &mut problems)),
-            Kind::Songs => songs = Some(SongsDoc::parse(&text, &mut problems)),
+            Kind::Songs => {
+                songs = Some(SongsDoc::parse(&text, &mut problems));
+                songs_text = Some(text);
+            }
             Kind::Setlist(stem) => setlists.push(SetlistDoc::parse(&stem, &text, &mut problems)),
         }
         report
@@ -249,7 +253,13 @@ pub fn import(
         library.songs_writable()?;
     }
 
-    if let Some(incoming) = &songs {
+    // A library with no songs of its own (a fresh install) takes the file as it is.
+    let adopted = songs_text
+        .as_deref()
+        .and_then(|text| library.adopt_songs_file(text));
+    if let Some(count) = adopted {
+        report.songs_added = count;
+    } else if let Some(incoming) = &songs {
         for song in incoming.songs() {
             match (library.song(&song.title).is_some(), options.songs) {
                 (false, _) => {
@@ -362,6 +372,113 @@ mod tests {
             assert_eq!(fresh.text(path), storage.text(path), "{path}");
         }
         assert_eq!(titles(&target), titles(&source));
+    }
+
+    const HAND_MADE_SONGS: &str = "# My songs\n\nSome notes before.\n\n| Song | BPM | Key |\n|---|---:|---|\n| Hotel California |   75 | Bm |\n| Waltz |  132 | G  |\n\nMore text after.\n";
+
+    #[test]
+    fn a_fresh_library_takes_the_songs_file_exactly_as_it_is() {
+        let archive = zip_of(&[("songs.md", HAND_MADE_SONGS)]);
+        let mut library = Library::empty();
+        let report = import(&mut library, &archive, &ImportOptions::default()).unwrap();
+        assert_eq!(report.songs_added, 2);
+        assert_eq!(titles(&library), ["Hotel California", "Waltz"]);
+
+        let storage = MemStorage::new();
+        library.save(&storage).unwrap();
+        assert_eq!(
+            storage.text("songs.md").as_deref(),
+            Some(HAND_MADE_SONGS),
+            "extra columns, text around the table and spacing survive"
+        );
+    }
+
+    #[test]
+    fn editing_after_a_verbatim_import_rewrites_the_table_and_keeps_the_rest() {
+        let archive = zip_of(&[("songs.md", HAND_MADE_SONGS)]);
+        let mut library = Library::empty();
+        import(&mut library, &archive, &ImportOptions::default()).unwrap();
+        library.add_song(Song::new("New Tune", 90.0, 6)).unwrap();
+
+        let storage = MemStorage::new();
+        library.save(&storage).unwrap();
+        let text = storage.text("songs.md").unwrap();
+        for kept in [
+            "Some notes before.",
+            "More text after.",
+            "Key",
+            "Bm",
+            "New Tune",
+        ] {
+            assert!(text.contains(kept), "{kept} is missing from:\n{text}");
+        }
+        assert_eq!(titles(&library), ["Hotel California", "Waltz", "New Tune"]);
+    }
+
+    #[test]
+    fn a_library_that_already_has_songs_is_merged_not_replaced() {
+        let mut library = Library::empty();
+        library.add_song(Song::new("Mine", 100.0, 4)).unwrap();
+        let archive = zip_of(&[("songs.md", HAND_MADE_SONGS)]);
+        let report = import(&mut library, &archive, &ImportOptions::default()).unwrap();
+        assert_eq!(report.songs_added, 2);
+        assert_eq!(titles(&library), ["Mine", "Hotel California", "Waltz"]);
+
+        let storage = MemStorage::new();
+        library.save(&storage).unwrap();
+        assert!(
+            !storage
+                .text("songs.md")
+                .unwrap()
+                .contains("Some notes before.")
+        );
+    }
+
+    #[test]
+    fn a_songs_file_with_text_but_no_songs_is_not_replaced_by_an_import() {
+        let storage = MemStorage::new();
+        storage
+            .write("songs.md", b"# Songs\n\nMy own notes, no table yet.\n")
+            .unwrap();
+        let mut library = Library::open(&storage).unwrap().library;
+        let archive = zip_of(&[("songs.md", HAND_MADE_SONGS)]);
+        let report = import(&mut library, &archive, &ImportOptions::default()).unwrap();
+        assert_eq!(report.songs_added, 2);
+
+        library.save(&storage).unwrap();
+        let text = storage.text("songs.md").unwrap();
+        assert!(text.contains("My own notes, no table yet."), "{text}");
+        assert!(!text.contains("Some notes before."), "{text}");
+    }
+
+    #[test]
+    fn an_archive_without_songs_leaves_a_fresh_library_untouched() {
+        let archive = zip_of(&[("songs.md", "# Songs\n\nNothing here yet.\n")]);
+        let mut library = Library::empty();
+        let report = import(&mut library, &archive, &ImportOptions::default()).unwrap();
+        assert_eq!(report.songs_added, 0);
+        assert!(!library.is_dirty(), "nothing to write");
+    }
+
+    #[test]
+    fn a_moved_library_comes_back_byte_for_byte_after_a_second_trip() {
+        // Phone A has a hand-made songs file; export, import on a fresh phone B, export again.
+        let a = MemStorage::new();
+        a.write("songs.md", HAND_MADE_SONGS.as_bytes()).unwrap();
+        let first = export(&a).unwrap();
+
+        let mut library = Library::empty();
+        import(&mut library, &first, &ImportOptions::default()).unwrap();
+        let b = MemStorage::new();
+        library.save(&b).unwrap();
+        assert_eq!(b.text("songs.md"), a.text("songs.md"));
+
+        let second = export(&b).unwrap();
+        let mut again = Library::empty();
+        import(&mut again, &second, &ImportOptions::default()).unwrap();
+        let c = MemStorage::new();
+        again.save(&c).unwrap();
+        assert_eq!(c.text("songs.md"), a.text("songs.md"));
     }
 
     #[test]

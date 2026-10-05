@@ -94,6 +94,11 @@ you. To use the toolchain in your own shell: `. scripts/env.sh`.
 | [docs/testing.md](docs/testing.md) | Test strategy, commands, on-device timing checklist |
 | [docs/roadmap.md](docs/roadmap.md) | Milestones with acceptance criteria, risks, open decisions |
 
+## Privacy
+
+The app has no internet permission and collects nothing; your files stay on your phone unless you
+export them. Details, including what Android's device backup does: [docs/privacy.md](docs/privacy.md).
+
 ## License
 
 [MIT](LICENSE). You may use, copy, change and share the code, including in your own apps, as long as

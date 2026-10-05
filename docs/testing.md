@@ -238,7 +238,7 @@ was installed on the phone, which first meant uninstalling the debug build. Driv
 | Afterwards | The release build was removed, the debug build reinstalled and the test library put back |
 
 **Not checked:** how the new launcher icon looks on the phone's own launcher (only a drawing of
-the same shapes in a circular mask was looked at), a `bundleRelease` build, and a release build on any
+the same shapes in a circular mask was looked at), a signed `bundleRelease` (an unsigned one builds, 4.1 MB), and a release build on any
 phone other than the Pixel 8 Pro.
 
 **Lint** (`./gradlew lintDebug`, now part of `scripts/test-all.sh`): 0 errors. Findings fixed: four
@@ -249,6 +249,31 @@ generated package; the manifest says `allowBackup="true"` with the template's ba
 not wired up (see the decision in the milestone notes); newer versions exist of the Android Gradle plugin,
 the Compose BOM and some libraries. The app has only been run on Android 17 (API 37); it is
 built for 26 and up, and nothing older has been tried.
+
+### Release-prep changes (2026-10-05): automated checks and what still has to be run on the phone
+
+Automated, in `scripts/test-all.sh`: 216 core tests and 21 FFI tests; lint with 0 errors; the license
+notices up to date (`scripts/generate-licenses.sh --check`); the release APK is 2.4 MB with
+**only** the permissions FOREGROUND_SERVICE, FOREGROUND_SERVICE_MEDIA_PLAYBACK and
+POST_NOTIFICATIONS (a build that asks for INTERNET fails).
+
+New core tests (6 for the import, plus the setting):
+
+| Test | What it proves |
+|---|---|
+| A fresh library takes the zip's `songs.md` exactly | Extra column, text before and after the table and spacing are written back byte for byte |
+| Editing after such an import | The table is rewritten as usual and the text around it and the extra column are kept |
+| A library that has songs | The songs are merged; the zip's text is **not** taken over |
+| A `songs.md` with text but no table | Not replaced: the songs are merged and the text stays |
+| An archive without songs | A fresh library is left untouched (nothing to write) |
+| Two trips (A → B → C) | The hand-made `songs.md` comes back byte for byte each time |
+| `mix_with_other_audio` | Read in any letter case, a bad value falls back to false with a warning, only that key is written |
+
+**Not yet run on the phone (the phone was locked when this was written):**
+the About screen (version, privacy text, a notice opens when tapped), the "play together with
+other audio" switch (the setting is saved, and the click keeps running while another app plays),
+a fresh install taking a hand-made `songs.md` exactly, and Auto Backup limited to the `Metronom`
+folder (it cannot be run without a backup transport; the rules only pass lint).
 
 ### Beat flash timing (manual, 2026-10-04, Pixel 8 Pro, debug build, `PowerSaving` mode)
 

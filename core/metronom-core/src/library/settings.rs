@@ -7,7 +7,7 @@ use crate::engine::Sound;
 /// The version of the file format this build reads and writes.
 pub const FORMAT: u32 = 2;
 
-const TEMPLATE: &str = "---\nformat: 2\nsound: click\nvolume: 0.8\nkeep_screen_on: true\nvisual_offset_ms: 0\n---\n# Settings\nEdit the values above. Unknown keys are kept.\n";
+const TEMPLATE: &str = "---\nformat: 2\nsound: click\nvolume: 0.8\nkeep_screen_on: true\nmix_with_other_audio: false\nvisual_offset_ms: 0\n---\n# Settings\nEdit the values above. Unknown keys are kept.\n";
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct AppSettings {
@@ -15,6 +15,9 @@ pub struct AppSettings {
     /// 0.0–1.0.
     pub volume: f32,
     pub keep_screen_on: bool,
+    /// Play together with other apps' audio instead of taking the audio focus (which pauses
+    /// them, and stops the click when another app takes it back).
+    pub mix_with_other_audio: bool,
     /// Shifts the beat flash relative to the sound, −500–500 ms.
     pub visual_offset_ms: i32,
     /// File name (without `.md`) of the setlist to reopen on launch.
@@ -27,6 +30,7 @@ impl Default for AppSettings {
             sound: Sound::Click,
             volume: 0.8,
             keep_screen_on: true,
+            mix_with_other_audio: false,
             visual_offset_ms: 0,
             last_setlist: None,
         }
@@ -116,6 +120,13 @@ impl SettingsDoc {
                 _ => warn(format!("\"{v}\" is not true or false; true is used")),
             }
         }
+        if let Some(v) = doc.get("mix_with_other_audio") {
+            match v.trim().to_ascii_lowercase().as_str() {
+                "true" => current.mix_with_other_audio = true,
+                "false" => current.mix_with_other_audio = false,
+                _ => warn(format!("\"{v}\" is not true or false; false is used")),
+            }
+        }
         if let Some(v) = doc.get("visual_offset_ms") {
             match v.trim().parse::<i32>() {
                 Ok(x) => {
@@ -194,6 +205,12 @@ impl SettingsDoc {
         if new.keep_screen_on != old.keep_screen_on {
             header.set("keep_screen_on", &new.keep_screen_on.to_string());
         }
+        if new.mix_with_other_audio != old.mix_with_other_audio {
+            header.set(
+                "mix_with_other_audio",
+                &new.mix_with_other_audio.to_string(),
+            );
+        }
         if new.visual_offset_ms != old.visual_offset_ms {
             header.set("visual_offset_ms", &new.visual_offset_ms.to_string());
         }
@@ -254,7 +271,7 @@ mod tests {
     #[test]
     fn reads_every_key() {
         let (doc, problems) = parse(
-            "---\nformat: 2\nsound: Wood\nvolume: 0.25\nkeep_screen_on: FALSE\nvisual_offset_ms: -120\nlast_setlist: friday-gig\n---\n",
+            "---\nformat: 2\nsound: Wood\nvolume: 0.25\nkeep_screen_on: FALSE\nmix_with_other_audio: True\nvisual_offset_ms: -120\nlast_setlist: friday-gig\n---\n",
         );
         assert!(problems.is_empty(), "{problems:?}");
         assert_eq!(
@@ -263,6 +280,7 @@ mod tests {
                 sound: Sound::Wood,
                 volume: 0.25,
                 keep_screen_on: false,
+                mix_with_other_audio: true,
                 visual_offset_ms: -120,
                 last_setlist: Some("friday-gig".to_string()),
             }
@@ -279,10 +297,10 @@ mod tests {
     #[test]
     fn bad_values_fall_back_with_warnings() {
         let (doc, problems) = parse(
-            "---\nsound: gong\nvolume: loud\nkeep_screen_on: maybe\nvisual_offset_ms: soon\n---\n",
+            "---\nsound: gong\nvolume: loud\nkeep_screen_on: maybe\nmix_with_other_audio: perhaps\nvisual_offset_ms: soon\n---\n",
         );
         assert_eq!(doc.settings(), &AppSettings::default());
-        assert_eq!(problems.len(), 4, "{problems:?}");
+        assert_eq!(problems.len(), 5, "{problems:?}");
     }
 
     #[test]

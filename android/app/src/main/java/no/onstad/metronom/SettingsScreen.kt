@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -50,7 +51,7 @@ private const val MAX_OFFSET_MS = 500
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SettingsScreen(store: LibraryStore, metronome: Metronome, onBack: () -> Unit) {
+fun SettingsScreen(store: LibraryStore, metronome: Metronome, onBack: () -> Unit, onOpenAbout: () -> Unit) {
   val scope = rememberCoroutineScope()
   val settings = store.settings
   var message by remember { mutableStateOf<String?>(null) }
@@ -108,6 +109,20 @@ fun SettingsScreen(store: LibraryStore, metronome: Metronome, onBack: () -> Unit
           style = MaterialTheme.typography.bodySmall,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.settings_mix), style = MaterialTheme.typography.bodyLarge)
+            Text(
+              stringResource(R.string.settings_mix_hint),
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+          Switch(
+            checked = settings.mixWithOtherAudio,
+            onCheckedChange = { on -> save { it.copy(mixWithOtherAudio = on) } },
+          )
+        }
 
         HorizontalDivider()
         SectionTitle(R.string.settings_flash)
@@ -153,6 +168,12 @@ fun SettingsScreen(store: LibraryStore, metronome: Metronome, onBack: () -> Unit
         HorizontalDivider()
         SectionTitle(R.string.settings_files)
         FilesSection(store, onMessage = { message = it })
+
+        HorizontalDivider()
+        SectionTitle(R.string.about)
+        OutlinedButton(onClick = onOpenAbout, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+          Text(stringResource(R.string.about_open))
+        }
         Spacer(Modifier.height(8.dp))
       }
     }
