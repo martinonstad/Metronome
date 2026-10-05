@@ -201,6 +201,13 @@ import in Rust and shows a report. On a fresh install (settings never changed) "
 preselected for the settings. Every outcome and error is shown in a dialog, because a message at
 the bottom of a scrolling screen was easy to miss.
 
+The **About screen** (from Settings) shows the version, the MIT license, the privacy statement and
+the license notices of every library inside the app. The notices are the file
+`android/app/src/main/assets/licenses.txt`, written by `scripts/generate-licenses.sh` from the Rust
+crates' license files, the Android libraries' POMs and UniFFI's MPL-2.0 text, and checked for being
+up to date by `scripts/test-all.sh`. Auto Backup, if the phone has it on, covers only the
+`Metronom` folder (`res/xml/backup_rules.xml` and `data_extraction_rules.xml`).
+
 Planned:
 
 - The `Metronome` object lives in the `Application` and is owned by a **foreground service**
@@ -214,7 +221,8 @@ Planned:
   output is about to change under you (`ACTION_AUDIO_BECOMING_NOISY`, headphones unplugged), and
   when the engine stops for any reason, such as a lost audio device (a watchdog checks once a
   second). It never restarts by itself: you press Start. If the focus is refused (a call is
-  active) it does not start and says so. A short interruption that only asks the click to be
+  active) it does not start and says so. With the setting `mix_with_other_audio` on, the service
+  never takes the focus at all, so other apps keep playing and are not what stops the click. A short interruption that only asks the click to be
   quieter is left to the system.
 - Min SDK 26 (Android 8.0, required by AAudio). Compile/target SDK 36 for now; revisit 37 with the
   foreground-service work.

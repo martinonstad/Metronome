@@ -27,6 +27,9 @@ them by editing this document and telling the maintainer.
 | Beats per bar | 1–99 | One number. The first beat of every bar is accented |
 | Sound | click, wood, beep, rim | A global setting (in `settings.md`), not per song |
 | Volume | 0–100 % | A global setting |
+| Play together with other audio | on / off (off) | A global setting. Off: the click takes the audio focus (it pauses a music app, and stops when a call or another app takes the audio). On: it never takes the focus, so other apps keep playing and are not interrupted by the click |
+| Flash timing | −500…+500 ms | A global setting; positive shows the flash later (for Bluetooth headphones) |
+| Keep the screen on | on / off (on) | While the click runs or a setlist is open |
 
 **Deliberately not included:** count-in, subdivisions, time-signature denominators, per-beat
 accent editing, and per-song sounds. Reasons: timing depends only on the tempo and on how many
@@ -84,7 +87,9 @@ added later.
 └──────────────────────────┘
 ```
 
-- **Next song** is one tap. **Previous** is a smaller button beside it.
+- **Next song** is one tap. **Previous** is a smaller button beside it. Both step over a song
+  that is not in the library (a missing song).
+- The song's **notes** (key, capo, intro length) are shown under the tempo.
 - **The song list** opens by swiping up from the bottom; tapping a song jumps straight to it.
 - **The click runs for the whole song.** Start and Stop are separate from changing song.
 - **Changing song while playing** *(default)*: the tempo and bar length switch on the next beat,
@@ -93,6 +98,10 @@ added later.
   press Start.
 - On the last song, Next shows "End of setlist" and does nothing.
 - The screen stays awake while a setlist is open (setting `keep_screen_on`).
+- **Back** returns to the manual screen; the click keeps running. Opening the same setlist again
+  resumes at the same song (the position is kept for the setlist played last, until the app is
+  closed by the system). The app does not reopen a setlist on launch: `last_setlist` in
+  `settings.md` is reserved for that.
 
 ### Songs
 
@@ -106,8 +115,9 @@ added later.
 
 ### Setlists
 
-- **Setlists list:** grouped by band/project. Each row shows the setlist name and song count with
-  copy and delete buttons. "New setlist" creates one.
+- **Setlists list:** grouped by band/project. Each row shows the setlist name and song count.
+  **Tapping the row plays it** (opens the gig screen); the row has **Edit, Copy and Delete**
+  buttons. "New setlist" creates one and opens its editor.
 - **Setlist editor:** name, band/project (typed, with the existing bands offered as quick
   choices), the songs in order, and:
   - reorder songs (drag handle or move up/down),
@@ -122,7 +132,10 @@ added later.
 | Situation | Behaviour |
 |---|---|
 | Phone locked or app in the background | Playback continues (foreground service with a notification) |
-| Audio device disappears (headphones unplugged) | Playback stops; Start reopens it |
+| Audio device disappears (headphones unplugged, Bluetooth gone) | Playback stops, and so does the service with its notification; Start reopens it |
+| Another app or a call takes the audio | Playback stops (not when "play together with other audio" is on); it never restarts by itself. If a call is active, Start does not start and says so |
+| The notification permission is denied | Playback works; only the notification is not shown |
+| An import into a library with no songs | The zip's `songs.md` is taken over exactly as it is (extra columns, text around the table); into a library that has songs, the songs are merged |
 | A song is renamed | Every setlist that uses it is updated |
 | A song is deleted | It is removed from every setlist that uses it, after you confirm |
 | A setlist is renamed | Only its heading changes; its file name stays the same |
@@ -145,6 +158,13 @@ added later.
 | Per-setlist tempo overrides? | No |
 | More flash styles? | Not needed |
 | Where does the sound choice live? | Global setting, not per song |
+| Tapping a setlist row? | Plays it; Edit, Copy and Delete are buttons on the row (decided 2026-10-05) |
+| Notes on the gig screen? | Yes, under the tempo (decided 2026-10-05) |
+| A missing song in a setlist while playing? | Next and Previous step over it (decided 2026-10-05) |
+| Resume position | Kept for the setlist played last; no reopening on launch yet (decided 2026-10-05) |
+| Another app's audio? | Default: the click takes the audio focus and stops when another app or a call takes it; a setting lets it play together with other audio (decided 2026-10-05) |
+| Auto Backup | Stays on for the `Metronom` folder only (decided 2026-10-05) |
+| Flash on/off switch | Not added: the flash is a thin bar and small dots, below the size at which flashing is a risk (decided 2026-10-05; revisit if anyone needs it) |
 
 ## Not now
 

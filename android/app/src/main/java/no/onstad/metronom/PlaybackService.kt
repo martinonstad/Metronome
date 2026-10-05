@@ -34,7 +34,8 @@ import uniffi.metronom_ffi.MetronomeException
  * [android.content.Context.stopService] or the notification's Stop action.
  *
  * It also ends itself, and so removes its notification, whenever the click cannot go on:
- * - another app or a call takes the audio (audio focus is lost),
+ * - another app or a call takes the audio (audio focus is lost; not when the "play together
+ *   with other audio" setting is on, which never takes the focus),
  * - the output is about to change under you (headphones unplugged: "becoming noisy"),
  * - the audio device went away or the engine stopped for any other reason.
  * It never starts again by itself; you press Start.
@@ -152,7 +153,9 @@ class PlaybackService : Service() {
       buildNotification(),
       ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK,
     )
-    if (!requestAudioFocus()) {
+    // Mixing with other audio (a setting) means not taking the focus at all: other apps keep
+    // playing, and a call or another app does not stop the click.
+    if (!metronomApp.library.settings.mixWithOtherAudio && !requestAudioFocus()) {
       Log.w(TAG, "Audio focus was refused; not starting")
       Toast.makeText(this, R.string.start_refused, Toast.LENGTH_LONG).show()
       stopSelf()

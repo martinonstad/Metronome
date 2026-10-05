@@ -148,6 +148,14 @@ the Kotlin bindings UniFFI generates, which JNA finds by reflection, so those cl
 After changing them, **install and run a signed release build on a phone**: a shrinking mistake
 only shows up as a crash at run time, not as a build error.
 
+## License notices
+
+The About screen shows `android/app/src/main/assets/licenses.txt`. When a dependency is added,
+removed or updated, run `scripts/generate-licenses.sh` and commit the result; `scripts/test-all.sh`
+fails when the file is out of date. It reads the license files of the Rust crates (from the cargo
+registry), the Android libraries' POMs (from Gradle's cache, so build once first) and
+`scripts/licenses/MPL-2.0.txt` (UniFFI's license, copied verbatim from its repository).
+
 ## Project conventions
 
 - **`metronom-core` has `#![forbid(unsafe_code)]`.** Only `metronom-ffi`'s audio module may use

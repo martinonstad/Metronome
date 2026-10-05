@@ -115,6 +115,9 @@ pub struct SongsDoc {
     /// Text after the table's last line (after the line break that ends it).
     suffix: String,
     dirty: bool,
+    /// Set when a whole file was taken over (an import into an empty library): it is written
+    /// exactly as it was read, until the first edit rewrites the table as usual.
+    verbatim: bool,
 }
 
 impl SongsDoc {
@@ -126,7 +129,22 @@ impl SongsDoc {
             table: None,
             suffix: String::new(),
             dirty: false,
+            verbatim: false,
         }
+    }
+
+    /// A file that was never written and has no songs, so nothing of the user's is in it.
+    pub(crate) fn is_pristine(&self) -> bool {
+        self.original.is_empty() && self.table.is_none() && !self.dirty
+    }
+
+    /// Take `text` over as the whole file: it is written back exactly as it is (extra columns,
+    /// text around the table, spacing), until the first edit.
+    pub(crate) fn adopt(text: &str, problems: &mut Vec<Problem>) -> Self {
+        let mut doc = Self::parse(text, problems);
+        doc.dirty = true;
+        doc.verbatim = true;
+        doc
     }
 
     /// `text` should already be normalized (see [`super::text::normalize`]).
@@ -169,6 +187,7 @@ impl SongsDoc {
                     String::new()
                 },
                 dirty: false,
+                verbatim: false,
             },
             None => {
                 if !text.trim().is_empty() {
@@ -182,6 +201,7 @@ impl SongsDoc {
                     table: None,
                     suffix: String::new(),
                     dirty: false,
+                    verbatim: false,
                 }
             }
         }
@@ -223,6 +243,7 @@ impl SongsDoc {
         }));
         table.ensure_columns();
         self.dirty = true;
+        self.verbatim = false;
         Ok(())
     }
 
@@ -253,6 +274,7 @@ impl SongsDoc {
                 table.ensure_columns();
             }
             self.dirty = true;
+            self.verbatim = false;
         }
         Ok(())
     }
@@ -265,6 +287,7 @@ impl SongsDoc {
             .iter()
             .position(|row| matches!(row, Row::Song(r) if title_key(&r.song.title) == key))?;
         self.dirty = true;
+        self.verbatim = false;
         match table.rows.remove(index) {
             Row::Song(r) => Some(r.song),
             Row::Opaque(_) => None,
@@ -273,7 +296,7 @@ impl SongsDoc {
 
     /// The file's text: the original if nothing changed, otherwise with the table rewritten.
     pub fn render(&self) -> String {
-        if !self.dirty {
+        if !self.dirty || self.verbatim {
             return self.original.clone();
         }
         let Some(table) = &self.table else {

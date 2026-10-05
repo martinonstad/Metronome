@@ -330,6 +330,23 @@ impl Library {
         }
     }
 
+    /// Import into a library that has no songs and no songs file: take the incoming file over
+    /// exactly as it is, so extra columns and the text around the table survive a move to a new
+    /// phone. Returns how many songs it holds, or `None` (nothing changed) when the library
+    /// already has songs or text of its own, or the incoming file has no songs.
+    pub(crate) fn adopt_songs_file(&mut self, text: &str) -> Option<usize> {
+        if self.songs_unreadable || !self.songs.is_pristine() {
+            return None;
+        }
+        let doc = SongsDoc::adopt(text, &mut Vec::new());
+        let count = doc.songs().count();
+        if count == 0 {
+            return None;
+        }
+        self.songs = doc;
+        Some(count)
+    }
+
     pub fn add_song(&mut self, song: Song) -> Result<(), LibraryError> {
         self.songs_writable()?;
         self.songs.push(song.clone()).map_err(|e| match e {

@@ -11,6 +11,9 @@ sealed interface Screen {
 
   data object Setlists : Screen
 
+  /** Version, license, privacy statement and the notices of the libraries inside the app. */
+  data object About : Screen
+
   /** Sound, volume, flash offset, keep-awake, and export/import of your files. */
   data object Settings : Screen
 
@@ -31,6 +34,7 @@ sealed interface Screen {
         Songs -> Manual
         Setlists -> Manual
         Settings -> Manual
+        About -> Settings
         is EditSetlist -> Setlists
         is Gig -> Manual
         is EditSong -> Songs
@@ -46,6 +50,7 @@ val ScreenSaver =
         Screen.Songs -> "songs"
         Screen.Setlists -> "setlists"
         Screen.Settings -> "settings"
+        Screen.About -> "about"
         is Screen.EditSetlist -> "setlist:${it.stem}"
         is Screen.Gig -> "gig:${it.stem}"
         is Screen.EditSong -> if (it.title == null) "new" else "edit:${it.title}"
@@ -56,6 +61,7 @@ val ScreenSaver =
         it == "songs" -> Screen.Songs
         it == "setlists" -> Screen.Setlists
         it == "settings" -> Screen.Settings
+        it == "about" -> Screen.About
         it.startsWith("gig:") -> Screen.Gig(it.removePrefix("gig:"))
         it.startsWith("setlist:") -> Screen.EditSetlist(it.removePrefix("setlist:"))
         it == "new" -> Screen.EditSong(null)

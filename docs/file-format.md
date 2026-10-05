@@ -34,6 +34,7 @@ format: 2
 sound: wood
 volume: 0.8
 keep_screen_on: true
+mix_with_other_audio: false
 visual_offset_ms: 0
 last_setlist: friday-gig
 ---
@@ -47,6 +48,7 @@ Edit the values above. Unknown keys are kept.
 | `sound` | `click` `wood` `beep` `rim` | `click` | The click sound |
 | `volume` | 0.0 – 1.0 | `0.8` | Output level |
 | `keep_screen_on` | boolean | `true` | Keep the display awake while a setlist is open or playing |
+| `mix_with_other_audio` | boolean | `false` | Play together with other apps' audio instead of taking the audio focus (which pauses them and stops the click when another app or a call takes it back) |
 | `visual_offset_ms` | −500 – 500 | `0` | Shift the flash relative to the sound (Bluetooth or timing correction). **Positive shows the flash later**, which is what to use when the flash comes before the sound; negative shows it earlier |
 | `last_setlist` | setlist file name (no `.md`) | none | Setlist reopened on launch |
 
@@ -184,12 +186,16 @@ valid name ending in `.md`.
 
 - **Export** produces a `.zip` of the layout above, taken from the saved files (save first if
   there are unsaved changes). It refuses to make an archive it could not import again.
+- **Import into a library with no songs and no `songs.md`** (a fresh install) takes the archive's
+  `songs.md` over **exactly as it is**: extra columns, text around the table and spacing survive a
+  move to a new phone. Into a library that already has songs (or its own text in `songs.md`) the
+  songs are merged as described below, and the table is the app's own.
 - **Import** merges an archive into the library in memory; nothing is written until the library
   is saved. It is **all-or-nothing**: if the archive is refused, nothing changes.
   - `settings.md`: skip (default) or overwrite. If your settings file is from a newer version, the
     rest of the import still goes ahead and the report says the settings were not imported.
   - `songs.md`: songs whose titles are not yet in the library are always added; for a title that
-    already exists, skip it (default) or overwrite it. Only the song values are imported (extra
+    already exists, skip it (default) or overwrite it. When songs are merged only the song values are imported (extra
     columns in the archive's table are not).
   - Setlists: if the file name is free the setlist is added; if it exists, skip it, overwrite it,
     or keep both (the default; the import gets a new file name such as `friday-gig-2`). A name
