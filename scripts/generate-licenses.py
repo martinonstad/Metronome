@@ -60,6 +60,30 @@ def rust_crates():
     )
 
 
+def license_name(text: str) -> str:
+    """A short name for a license text, for the title of its block."""
+    flat = " ".join(text.split())
+    if APACHE_MARK in text:
+        return "Apache License 2.0"
+    if "Permission is hereby granted, free of charge" in flat:
+        return "MIT License"
+    if "Permission to use, copy, modify, and/or distribute this software for any purpose" in flat:
+        return "0BSD License"
+    if "This software is provided 'as-is'" in flat:
+        return "zlib License"
+    if "free and unencumbered software" in flat:
+        return "Unlicense"
+    if "UNICODE LICENSE" in flat.upper()[:200]:
+        return "Unicode License V3"
+    if "Redistribution and use in source and binary forms" in flat:
+        return "BSD License"
+    if "Mozilla Public License" in flat[:200]:
+        return "Mozilla Public License 2.0"
+    if "Licensed under the Apache License" in flat and "MIT license" in flat:
+        return "Apache License 2.0 or MIT (notice)"
+    return next((l.strip() for l in text.split("\n") if l.strip()), "License")[:50]
+
+
 def rust_texts(crates):
     """(text -> crates) for every license file, and crates that have none."""
     by_text = collections.defaultdict(list)
@@ -149,12 +173,11 @@ def build() -> str:
     groups = sorted(by_text.items(), key=lambda kv: (sorted(kv[1])[0], kv[0]))
     for text, users in groups:
         if text == apache:
-            title = f"Rust libraries, Apache License 2.0 ({len(users)})"
+            title = f"Rust libraries, Apache License 2.0: {len(users)} libraries"
             blocks.append((title, "Used by: " + ", ".join(sorted(users)) + "\n\n(The text is the one above.)"))
             continue
-        first = next((l.strip() for l in text.split("\n") if l.strip()), "License")[:50]
         some = ", ".join(sorted(users)[:3]) + (", …" if len(users) > 3 else "")
-        blocks.append((f"Rust libraries, {first} ({some})", "Used by: " + ", ".join(sorted(users)) + "\n\n" + text))
+        blocks.append((f"Rust libraries, {license_name(text)}: {some}", "Used by: " + ", ".join(sorted(users)) + "\n\n" + text))
     mpl = [c for c in without if (c.get("license") or "") == "MPL-2.0"]
     rest = [c for c in without if c not in mpl]
     if mpl:
