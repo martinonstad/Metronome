@@ -29,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
@@ -96,7 +95,7 @@ fun AboutScreen(onBack: () -> Unit) {
           Text(block.title, style = MaterialTheme.typography.bodyMedium)
           if (open == index) {
             Spacer(Modifier.height(8.dp))
-            Text(block.text, fontFamily = FontFamily.Monospace, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(block.text, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
           }
         }
         HorizontalDivider()

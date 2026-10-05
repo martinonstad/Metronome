@@ -250,7 +250,7 @@ not wired up (see the decision in the milestone notes); newer versions exist of 
 the Compose BOM and some libraries. The app has only been run on Android 17 (API 37); it is
 built for 26 and up, and nothing older has been tried.
 
-### Release-prep changes (2026-10-05): automated checks and what still has to be run on the phone
+### Release-prep changes (2026-10-05): automated checks and the phone
 
 Automated, in `scripts/test-all.sh`: 216 core tests and 21 FFI tests; lint with 0 errors; the license
 notices up to date (`scripts/generate-licenses.sh --check`); the release APK is 2.4 MB with
@@ -269,11 +269,20 @@ New core tests (6 for the import, plus the setting):
 | Two trips (A → B → C) | The hand-made `songs.md` comes back byte for byte each time |
 | `mix_with_other_audio` | Read in any letter case, a bad value falls back to false with a warning, only that key is written |
 
-**Not yet run on the phone (the phone was locked when this was written):**
-the About screen (version, privacy text, a notice opens when tapped), the "play together with
-other audio" switch (the setting is saved, and the click keeps running while another app plays),
-a fresh install taking a hand-made `songs.md` exactly, and Auto Backup limited to the `Metronom`
-folder (it cannot be run without a backup transport; the rules only pass lint).
+**Run on the Pixel 8 Pro afterwards (2026-10-05, debug build, adb):**
+
+| Check | Result |
+|---|---|
+| About screen (Settings → About, privacy and licenses) | Shows "Version 0.1.0", the MIT line, the privacy text and 53 notices; tapping one opens its text (the Metronom entry shows the full MIT license); no crash |
+| Notice titles | The first version showed titles such as "Permission is hereby granted, free of charge, to a…": **fixed**, they now read "MIT License: adler2, anyhow, …", "Apache License 2.0: …", "BSD License", "zlib License", "0BSD License", "Mozilla Public License 2.0" |
+| The mix switch | Switching it on writes `mix_with_other_audio: true` to `settings.md` (and nothing else changes) |
+| Another app plays audio while the click runs, **mix on** | The service kept running and the engine kept delivering audio (callbacks continued, 0 underruns). With mix **off** the click stops in the same situation (checked the day before) |
+| **Fresh install** (`pm clear`), import a Mac-made zip with a hand-made `songs.md` (prose before and after the table, an extra `Key` column, right-aligned numbers) and a setlist, default options | "Songs: 3 added. Setlists: 1 added. Settings: yours kept."; **`songs.md` and the setlist are byte for byte identical to the zip's files** |
+| Then add a song in the app | The new row is added; the prose before and after, the `Key` column and the alignment survive; only the table's padding is recomputed |
+| Afterwards | The test library was put back, the mix setting off, my test files removed from Downloads |
+
+Not run: Auto Backup limited to the `Metronom` folder (it needs a backup transport, and a real one
+uploads to a Google account; the rules only pass lint), and the notification (permission denied).
 
 ### Beat flash timing (manual, 2026-10-04, Pixel 8 Pro, debug build, `PowerSaving` mode)
 

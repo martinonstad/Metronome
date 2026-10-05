@@ -110,7 +110,7 @@ fun SettingsScreen(store: LibraryStore, metronome: Metronome, onBack: () -> Unit
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
-          Column(Modifier.weight(1f)) {
+          Column(Modifier.weight(1f).padding(end = 12.dp)) {
             Text(stringResource(R.string.settings_mix), style = MaterialTheme.typography.bodyLarge)
             Text(
               stringResource(R.string.settings_mix_hint),

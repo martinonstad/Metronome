@@ -314,7 +314,7 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
 END OF TERMS AND CONDITIONS
 
-## Rust libraries, Apache License (adler2 2.0.1, cargo-platform 0.3.3, proc-macro-crate 3.5.0)
+## Rust libraries, Apache License 2.0: adler2 2.0.1, cargo-platform 0.3.3, proc-macro-crate 3.5.0
 Used by: adler2 2.0.1, cargo-platform 0.3.3, proc-macro-crate 3.5.0
 
 Apache License
@@ -519,7 +519,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-## Rust libraries, Copyright (C) Jonas Schievink <jonasschievink@gmai (adler2 2.0.1)
+## Rust libraries, 0BSD License: adler2 2.0.1
 Used by: adler2 2.0.1
 
 Copyright (C) Jonas Schievink <jonasschievink@gmail.com>
@@ -535,7 +535,7 @@ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
 AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-## Rust libraries, Permission is hereby granted, free of charge, to a (adler2 2.0.1, anyhow 1.0.104, basic-toml 0.1.10, …)
+## Rust libraries, MIT License: adler2 2.0.1, anyhow 1.0.104, basic-toml 0.1.10, …
 Used by: adler2 2.0.1, anyhow 1.0.104, basic-toml 0.1.10, camino 1.2.6, cargo-platform 0.3.3, cargo_metadata 0.23.1, fastrand 2.5.0, fs-err 3.3.2, itoa 1.0.18, linux-raw-sys 0.12.1, minimal-lexical 0.2.1, num_enum 0.7.6, num_enum_derive 0.7.6, once_cell 1.21.4, proc-macro-crate 3.5.0, proc-macro2 1.0.107, quote 1.0.47, rustc-hash 2.1.3, rustix 1.1.5, rustversion 1.0.23, semver 1.0.28, serde 1.0.229, serde_core 1.0.229, serde_derive 1.0.229, serde_json 1.0.151, syn 2.0.119, syn 3.0.6, thiserror 1.0.69, thiserror 2.0.21, thiserror-impl 1.0.69, thiserror-impl 2.0.21, unicode-ident 1.0.26, zmij 1.0.23
 
 Permission is hereby granted, free of charge, to any
@@ -562,12 +562,12 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-## Rust libraries, Apache License 2.0 (22)
+## Rust libraries, Apache License 2.0: 22 libraries
 Used by: anyhow 1.0.104, basic-toml 0.1.10, itoa 1.0.18, libc 0.2.190, num_enum 0.7.6, num_enum_derive 0.7.6, proc-macro2 1.0.107, quote 1.0.47, rustc-hash 2.1.3, rustversion 1.0.23, semver 1.0.28, serde 1.0.229, serde_core 1.0.229, serde_derive 1.0.229, serde_json 1.0.151, syn 2.0.119, syn 3.0.6, thiserror 1.0.69, thiserror 2.0.21, thiserror-impl 1.0.69, thiserror-impl 2.0.21, unicode-ident 1.0.26
 
 (The text is the one above.)
 
-## Rust libraries, Apache License (askama 0.16.1, askama_derive 0.16.1, askama_macros 0.16.1, …)
+## Rust libraries, Apache License 2.0: askama 0.16.1, askama_derive 0.16.1, askama_macros 0.16.1, …
 Used by: askama 0.16.1, askama_derive 0.16.1, askama_macros 0.16.1, askama_parser 0.16.1
 
 Apache License
@@ -772,7 +772,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-## Rust libraries, Copyright (c) 2017-2020 Dirkjan Ochtman (askama 0.16.1, askama_derive 0.16.1, askama_macros 0.16.1, …)
+## Rust libraries, MIT License: askama 0.16.1, askama_derive 0.16.1, askama_macros 0.16.1, …
 Used by: askama 0.16.1, askama_derive 0.16.1, askama_macros 0.16.1, askama_parser 0.16.1
 
 Copyright (c) 2017-2020 Dirkjan Ochtman
@@ -801,7 +801,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-## Rust libraries, Apache License (bitflags 2.13.2, camino 1.2.6, cfg-if 1.0.5, …)
+## Rust libraries, Apache License 2.0: bitflags 2.13.2, camino 1.2.6, cfg-if 1.0.5, …
 Used by: bitflags 2.13.2, camino 1.2.6, cfg-if 1.0.5, equivalent 1.0.2, errno 0.3.14, fastrand 2.5.0, fs-err 3.3.2, glob 0.3.4, hashbrown 0.17.1, heck 0.5.0, indexmap 2.14.2, linux-raw-sys 0.12.1, log 0.4.34, once_cell 1.21.4, percent-encoding 2.3.2, plain 0.2.3, rustix 1.1.5, tempfile 3.27.0, unicode-width 0.2.2
 
 Apache License
@@ -1006,7 +1006,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-## Rust libraries, Copyright (c) 2014 The Rust Project Developers (bitflags 2.13.2, glob 0.3.4, log 0.4.34)
+## Rust libraries, MIT License: bitflags 2.13.2, glob 0.3.4, log 0.4.34
 Used by: bitflags 2.13.2, glob 0.3.4, log 0.4.34
 
 Copyright (c) 2014 The Rust Project Developers
@@ -1035,7 +1035,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-## Rust libraries, Copyright (c) 2018 Carl Lerche (bytes 1.12.1)
+## Rust libraries, MIT License: bytes 1.12.1
 Used by: bytes 1.12.1
 
 Copyright (c) 2018 Carl Lerche
@@ -1064,7 +1064,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-## Rust libraries, Copyright (c) 2014 Alex Crichton (cfg-if 1.0.5)
+## Rust libraries, MIT License: cfg-if 1.0.5
 Used by: cfg-if 1.0.5
 
 Copyright (c) 2014 Alex Crichton
@@ -1093,7 +1093,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-## Rust libraries, Copyright (c) 2016--2023 (equivalent 1.0.2)
+## Rust libraries, MIT License: equivalent 1.0.2
 Used by: equivalent 1.0.2
 
 Copyright (c) 2016--2023
@@ -1122,7 +1122,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-## Rust libraries, Copyright (c) 2014 Chris Wong (errno 0.3.14)
+## Rust libraries, MIT License: errno 0.3.14
 Used by: errno 0.3.14
 
 Copyright (c) 2014 Chris Wong
@@ -1151,7 +1151,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-## Rust libraries, Apache License (getrandom 0.4.3)
+## Rust libraries, Apache License 2.0: getrandom 0.4.3
 Used by: getrandom 0.4.3
 
 Apache License
@@ -1356,7 +1356,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-## Rust libraries, Copyright (c) 2018-2026 The rust-random Project De (getrandom 0.4.3)
+## Rust libraries, MIT License: getrandom 0.4.3
 Used by: getrandom 0.4.3
 
 Copyright (c) 2018-2026 The rust-random Project Developers
@@ -1386,7 +1386,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-## Rust libraries, The MIT License (MIT) (goblin 0.8.2)
+## Rust libraries, MIT License: goblin 0.8.2
 Used by: goblin 0.8.2
 
 The MIT License (MIT)
@@ -1411,7 +1411,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## Rust libraries, Copyright (c) 2016 Amanieu d'Antras (hashbrown 0.17.1)
+## Rust libraries, MIT License: hashbrown 0.17.1
 Used by: hashbrown 0.17.1
 
 Copyright (c) 2016 Amanieu d'Antras
@@ -1440,7 +1440,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-## Rust libraries, Copyright (c) 2015 The Rust Project Developers (heck 0.5.0, unicode-width 0.2.2)
+## Rust libraries, MIT License: heck 0.5.0, unicode-width 0.2.2
 Used by: heck 0.5.0, unicode-width 0.2.2
 
 Copyright (c) 2015 The Rust Project Developers
@@ -1469,7 +1469,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-## Rust libraries, Copyright (c) 2016--2017 (indexmap 2.14.2)
+## Rust libraries, MIT License: indexmap 2.14.2
 Used by: indexmap 2.14.2
 
 Copyright (c) 2016--2017
@@ -1498,7 +1498,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-## Rust libraries, Apache License (jni-sys 0.3.1, jni-sys 0.4.1, serde_spanned 1.1.1, …)
+## Rust libraries, Apache License 2.0: jni-sys 0.3.1, jni-sys 0.4.1, serde_spanned 1.1.1, …
 Used by: jni-sys 0.3.1, jni-sys 0.4.1, serde_spanned 1.1.1, toml 1.1.6+spec-1.1.0, toml_datetime 1.1.1+spec-1.1.0, toml_edit 0.25.15+spec-1.1.0, toml_parser 1.1.3+spec-1.1.0, toml_writer 1.1.2+spec-1.1.0
 
 Apache License
@@ -1703,7 +1703,7 @@ Apache License
    See the License for the specific language governing permissions and
    limitations under the License.
 
-## Rust libraries, Copyright (c) 2015 The rust-jni-sys Developers (jni-sys 0.3.1, jni-sys 0.4.1)
+## Rust libraries, MIT License: jni-sys 0.3.1, jni-sys 0.4.1
 Used by: jni-sys 0.3.1, jni-sys 0.4.1
 
 Copyright (c) 2015 The rust-jni-sys Developers
@@ -1726,7 +1726,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## Rust libraries, Copyright (c) The Rust Project Developers (libc 0.2.190)
+## Rust libraries, MIT License: libc 0.2.190
 Used by: libc 0.2.190
 
 Copyright (c) The Rust Project Developers
@@ -1755,7 +1755,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-## Rust libraries, Apache License (linux-raw-sys 0.12.1, rustix 1.1.5)
+## Rust libraries, Apache License 2.0: linux-raw-sys 0.12.1, rustix 1.1.5
 Used by: linux-raw-sys 0.12.1, rustix 1.1.5
 
 Apache License
@@ -1977,7 +1977,7 @@ prospectively choose to deem waived or otherwise exclude such Section(s) of
 the License, but only in their entirety and only with respect to the Combined
 Software.
 
-## Rust libraries, The MIT License (MIT) (memchr 2.8.3)
+## Rust libraries, MIT License: memchr 2.8.3
 Used by: memchr 2.8.3
 
 The MIT License (MIT)
@@ -2002,7 +2002,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-## Rust libraries, This is free and unencumbered software released in (memchr 2.8.3)
+## Rust libraries, Unlicense: memchr 2.8.3
 Used by: memchr 2.8.3
 
 This is free and unencumbered software released into the public domain.
@@ -2030,14 +2030,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 For more information, please refer to <http://unlicense.org/>
 
-## Rust libraries, This project is dual-licensed under the Unlicense  (memchr 2.8.3)
+## Rust libraries, This project is dual-licensed under the Unlicense : memchr 2.8.3
 Used by: memchr 2.8.3
 
 This project is dual-licensed under the Unlicense and MIT licenses.
 
 You may use this code under the terms of either license.
 
-## Rust libraries, Apache License (minimal-lexical 0.2.1)
+## Rust libraries, Apache License 2.0: minimal-lexical 0.2.1
 Used by: minimal-lexical 0.2.1
 
 Apache License
@@ -2242,7 +2242,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-## Rust libraries, Minimal-lexical is dual licensed under the Apache  (minimal-lexical 0.2.1)
+## Rust libraries, BSD License: minimal-lexical 0.2.1
 Used by: minimal-lexical 0.2.1
 
 Minimal-lexical is dual licensed under the Apache 2.0 license as well as the MIT
@@ -2283,7 +2283,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-## Rust libraries, Apache License (miniz_oxide 0.9.1)
+## Rust libraries, Apache License 2.0: miniz_oxide 0.9.1
 Used by: miniz_oxide 0.9.1
 
 Apache License
@@ -2463,7 +2463,7 @@ Apache License
 
    END OF TERMS AND CONDITIONS
 
-## Rust libraries, Copyright 2013-2014 RAD Game Tools and Valve Softw (miniz_oxide 0.9.1)
+## Rust libraries, zlib License: miniz_oxide 0.9.1
 Used by: miniz_oxide 0.9.1
 
 Copyright 2013-2014 RAD Game Tools and Valve Software
@@ -2481,7 +2481,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 3. This notice may not be removed or altered from any source distribution.
 
-## Rust libraries, MIT License (miniz_oxide 0.9.1)
+## Rust libraries, MIT License: miniz_oxide 0.9.1
 Used by: miniz_oxide 0.9.1
 
 MIT License
@@ -2510,7 +2510,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## Rust libraries, MIT License (miniz_oxide 0.9.1)
+## Rust libraries, MIT License: miniz_oxide 0.9.1
 Used by: miniz_oxide 0.9.1
 
 MIT License
@@ -2538,7 +2538,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## Rust libraries, Copyright (c) 2014-2019 Geoffroy Couprie (nom 7.1.3)
+## Rust libraries, MIT License: nom 7.1.3
 Used by: nom 7.1.3
 
 Copyright (c) 2014-2019 Geoffroy Couprie
@@ -2562,7 +2562,7 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-## Rust libraries, Copyright (c) 2018, Daniel Wagner-Hall (num_enum 0.7.6, num_enum_derive 0.7.6)
+## Rust libraries, BSD License: num_enum 0.7.6, num_enum_derive 0.7.6
 Used by: num_enum 0.7.6, num_enum_derive 0.7.6
 
 Copyright (c) 2018, Daniel Wagner-Hall
@@ -2593,7 +2593,7 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-## Rust libraries, Copyright (c) 2013-2025 The rust-url developers (percent-encoding 2.3.2)
+## Rust libraries, MIT License: percent-encoding 2.3.2
 Used by: percent-encoding 2.3.2
 
 Copyright (c) 2013-2025 The rust-url developers
@@ -2622,7 +2622,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-## Rust libraries, Copyright (c) 2017 Plain contributors (plain 0.2.3)
+## Rust libraries, MIT License: plain 0.2.3
 Used by: plain 0.2.3
 
 Copyright (c) 2017 Plain contributors
@@ -2651,7 +2651,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-## Rust libraries, The MIT License (MIT) (scroll 0.12.0)
+## Rust libraries, MIT License: scroll 0.12.0
 Used by: scroll 0.12.0
 
 The MIT License (MIT)
@@ -2676,7 +2676,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## Rust libraries, MIT License (scroll_derive 0.12.1)
+## Rust libraries, MIT License: scroll_derive 0.12.1
 Used by: scroll_derive 0.12.1
 
 MIT License
@@ -2701,7 +2701,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## Rust libraries, Copyright (c) Individual contributors (serde_spanned 1.1.1, toml 1.1.6+spec-1.1.0, toml_datetime 1.1.1+spec-1.1.0, …)
+## Rust libraries, MIT License: serde_spanned 1.1.1, toml 1.1.6+spec-1.1.0, toml_datetime 1.1.1+spec-1.1.0, …
 Used by: serde_spanned 1.1.1, toml 1.1.6+spec-1.1.0, toml_datetime 1.1.1+spec-1.1.0, toml_edit 0.25.15+spec-1.1.0, toml_parser 1.1.3+spec-1.1.0, toml_writer 1.1.2+spec-1.1.0
 
 Copyright (c) Individual contributors
@@ -2724,7 +2724,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## Rust libraries, Apache License (siphasher 1.0.4, static_assertions 1.1.0)
+## Rust libraries, Apache License 2.0: siphasher 1.0.4, static_assertions 1.1.0
 Used by: siphasher 1.0.4, static_assertions 1.1.0
 
 Apache License
@@ -2929,7 +2929,7 @@ Apache License
    See the License for the specific language governing permissions and
    limitations under the License.
 
-## Rust libraries, Copyright 2012-2016 The Rust Project Developers. (siphasher 1.0.4)
+## Rust libraries, Apache License 2.0 or MIT (notice): siphasher 1.0.4
 Used by: siphasher 1.0.4
 
 Copyright 2012-2016 The Rust Project Developers.
@@ -2940,7 +2940,7 @@ http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
 <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
 option.
 
-## Rust libraries, Permission is hereby granted, free of charge, to a (siphasher 1.0.4)
+## Rust libraries, MIT License: siphasher 1.0.4
 Used by: siphasher 1.0.4
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -2961,7 +2961,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## Rust libraries, MIT License (smawk 0.3.3)
+## Rust libraries, MIT License: smawk 0.3.3
 Used by: smawk 0.3.3
 
 MIT License
@@ -2986,7 +2986,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## Rust libraries, MIT License (static_assertions 1.1.0)
+## Rust libraries, MIT License: static_assertions 1.1.0
 Used by: static_assertions 1.1.0
 
 MIT License
@@ -3011,7 +3011,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## Rust libraries, Copyright (c) 2015 Steven Allen (tempfile 3.27.0)
+## Rust libraries, MIT License: tempfile 3.27.0
 Used by: tempfile 3.27.0
 
 Copyright (c) 2015 Steven Allen
@@ -3040,7 +3040,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-## Rust libraries, MIT License (textwrap 0.16.4)
+## Rust libraries, MIT License: textwrap 0.16.4
 Used by: textwrap 0.16.4
 
 MIT License
@@ -3065,7 +3065,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## Rust libraries, UNICODE LICENSE V3 (unicode-ident 1.0.26)
+## Rust libraries, MIT License: unicode-ident 1.0.26
 Used by: unicode-ident 1.0.26
 
 UNICODE LICENSE V3
@@ -3108,7 +3108,7 @@ not be used in advertising or otherwise to promote the sale, use or other
 dealings in these Data Files or Software without prior written
 authorization of the copyright holder.
 
-## Rust libraries, Copyright 2018-Present Sharad Chand (weedle2 5.0.0)
+## Rust libraries, MIT License: weedle2 5.0.0
 Used by: weedle2 5.0.0
 
 Copyright 2018-Present Sharad Chand
@@ -3128,7 +3128,7 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABI
 CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
-## Rust libraries, Permission is hereby granted, free of charge, to a (winnow 1.0.4)
+## Rust libraries, MIT License: winnow 1.0.4
 Used by: winnow 1.0.4
 
 Permission is hereby granted, free of charge, to any person obtaining
