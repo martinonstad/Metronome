@@ -171,13 +171,15 @@ other audio" setting, Auto Backup for the `Metronom` folder only, the library no
 screen, the privacy statement ([privacy.md](privacy.md)), English only, bug reports through GitHub
 issues, no crash reporting, API 36 as the target for now, a signed APK before Google Play.
 
+Decided on 2026-10-05 as well: application id `io.github.martinonstad.metronom`, the name
+"Metronom", the first release version `0.9.0` (it becomes `1.0.0` after the hardware checks and some real
+use). The debug build has its own id (`….debug`) so both can be on one phone.
+
 Still open:
 
-- **Your release key** — create it, back it up ([development.md](development.md#release-build)).
-- **Application id and name** — `no.onstad.metronom` and "Metronom" are placeholders. The id
-  is permanent once published; it should match a domain you own. Decide before the first public
-  release.
-- **First version number** — `0.1.0` now; `1.0.0` once the checks below are done.
+- **Your release key** — run `scripts/create-release-key.sh` yourself (it asks for a password nobody
+  else sees), back the file up in two places, then `scripts/build-release.sh`
+  ([development.md](development.md#release-build)).
 - **Android versions** — decided 2026-10-05: **no testing on older Android versions.** The app is
   built for Android 8 and up (API 26) and has only ever run on Android 17 (a Pixel 8 Pro); the README
   says so. A release should say "tested on Android 17" and nothing more. If you would rather not

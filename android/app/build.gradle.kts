@@ -3,15 +3,26 @@ plugins {
   alias(libs.plugins.compose.compiler)
 }
 
+// The one place the version is set. versionCode is derived from it (0.9.0 -> 900, 1.0.0 -> 10000),
+// so it always grows with the version; scripts/build-release.sh reads this line too.
+val appVersionName = "0.9.0"
+val appVersionCode =
+    appVersionName.substringBefore('-').split('.').let { (major, minor, patch) ->
+        major.toInt() * 10_000 + minor.toInt() * 100 + patch.toInt()
+    }
+
 android {
+    // The Kotlin package; the id the phone knows the app by is applicationId below.
     namespace = "no.onstad.metronom"
     compileSdk = 36
     defaultConfig {
-        applicationId = "no.onstad.metronom"
+        // Permanent once a release is installed anywhere: a different id is a different app.
+        applicationId = "io.github.martinonstad.metronom"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
+        manifestPlaceholders["appLabel"] = "@string/app_name"
         // The Rust library is only built for arm64; this also keeps JNA from bundling
         // native helpers for ABIs we do not ship.
         ndk { abiFilters += "arm64-v8a" }
@@ -34,6 +45,13 @@ android {
     }
 
     buildTypes {
+        // The debug build has its own id and label, so a debug and a release build can be
+        // installed side by side (and a release never has to replace, and wipe, the debug one).
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            manifestPlaceholders["appLabel"] = "Metronom (debug)"
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true

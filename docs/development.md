@@ -120,28 +120,42 @@ is 10 MB or larger; `scripts/test-all.sh` runs it. Without a signing key the APK
 (`android/app/build/outputs/apk/release/app-release-unsigned.apk`): good for measuring, not
 installable. At the time of writing it is about 2.4 MB.
 
-**Signing.** The release key is **never in the repository**; the build reads it from environment
-variables. Make your own key once, keep the file and its password safe (a copy somewhere other than
-this Mac), and lose neither: an app signed with a lost key can only be replaced by uninstalling it.
+**Signing.** The release key is **never in the repository** and is never typed into anything but
+your own terminal. Make it once, yourself:
 
 ```bash
-keytool -genkeypair -v -keystore ~/metronom-release.jks -alias metronom \
-  -keyalg RSA -keysize 4096 -validity 10000
+scripts/create-release-key.sh
 ```
 
-Then build a signed APK, or an Android App Bundle (what Google Play wants):
+`keytool` asks you for a password (nothing is shown as you type). The key goes to
+`~/.metronom/release.jks` (folder `700`, file `600`), and the script prints its SHA-256 fingerprint,
+which is public. **Back the file up straight away** (two places that are not this Mac) and keep the
+password in a password manager: an app signed with a lost key cannot be updated, only uninstalled and
+reinstalled, and Google Play cannot recover it either.
+
+Then build, check and sign a release in one command:
 
 ```bash
-export METRONOM_KEYSTORE=~/metronom-release.jks
-export METRONOM_KEYSTORE_PASSWORD='…'   # METRONOM_KEY_PASSWORD too, if the key's differs
-export METRONOM_KEY_ALIAS=metronom
-cd android && . ../scripts/env.sh && ./gradlew assembleRelease     # APK, to install by hand
-cd android && . ../scripts/env.sh && ./gradlew bundleRelease       # AAB, for Google Play
-$ANDROID_HOME/build-tools/36.0.0/apksigner verify --verbose android/app/build/outputs/apk/release/app-release.apk
+scripts/build-release.sh              # runs scripts/test-all.sh, asks for the key's password, then
+                                      # writes dist/Metronom-<version>.apk and its .sha256
+scripts/build-release.sh --bundle     # also dist/Metronom-<version>.aab (what Google Play wants)
+scripts/build-release.sh --skip-checks   # skip the few-minute test run
 ```
 
-A release build is signed differently from a debug build, so Android will not install one over
-the other: uninstall first (this deletes the app's data; export your library before).
+The script verifies the signature, prints the signer's fingerprint, fails if the APK asks for the
+INTERNET permission, and tells you how to install it: `adb install -r dist/Metronom-<version>.apk`.
+`dist/` is git-ignored. (By hand, the build reads `METRONOM_KEYSTORE`, `METRONOM_KEYSTORE_PASSWORD`
+and `METRONOM_KEY_ALIAS` from the environment.)
+
+**Debug and release can live on one phone.** The debug build has its own application id
+(`io.github.martinonstad.metronom.debug`) and is labelled "Metronom (debug)", so installing a release
+build does not replace, or wipe, the debug build, and they keep separate libraries. Use
+`adb shell run-as io.github.martinonstad.metronom.debug …` for the debug build's files.
+
+**Publishing.** On GitHub, create a release for the tag (for example `v0.9.0`) and attach the APK and
+its `.sha256`; put the key's fingerprint in the release notes so people can check that updates come
+from you. An update installs over the previous release only if it is signed with the same key and has
+a higher `versionCode` (it is derived from the version, so it always grows).
 
 The R8 rules are in `android/app/proguard-rules.pro`. The Rust library is reached through JNA and
 the Kotlin bindings UniFFI generates, which JNA finds by reflection, so those classes are kept.
@@ -165,9 +179,11 @@ registry), the Android libraries' POMs (from Gradle's cache, so build once first
 - **Clamp, don't reject.** Out-of-range user input is clamped to the valid range.
 - **Formatting and lints are enforced:** `cargo fmt` and `cargo clippy -D warnings` run in
   `scripts/test-all.sh`.
-- **Android application id.** It is `no.onstad.metronom`, a placeholder. It is permanent once an
-  app is published, so change it (in `android/app/build.gradle.kts` and the Kotlin package)
-  before the first release if it should be different.
+- **Application id and version.** The id is `io.github.martinonstad.metronom` (the Kotlin package is
+  still `no.onstad.metronom`, which does not matter to the phone). It is **permanent** once a release is
+  installed anywhere: a different id is a different app, with its own data. The version is the one line
+  `val appVersionName` in `android/app/build.gradle.kts`; the `versionCode` is derived from it
+  (0.9.0 → 900, 1.0.0 → 10000) so it only ever grows.
 
 ## Troubleshooting
 
