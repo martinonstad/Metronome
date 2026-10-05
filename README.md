@@ -51,7 +51,9 @@ See [docs/design.md](docs/design.md) for the reasoning.
 | **M5** iPhone app | Not started (needs Xcode) |
 
 Everything measured so far comes from one phone, a Pixel 8 Pro running Android 17; the iPhone
-side is unverified.
+side is unverified. The app is built to install on Android 8 and up, but it has only ever been run
+on Android 17 and older versions are deliberately not tested: treat anything below 17 as
+unsupported.
 
 ## Quick start (development)
 
