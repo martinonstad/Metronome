@@ -178,9 +178,11 @@ Still open:
   is permanent once published; it should match a domain you own. Decide before the first public
   release.
 - **First version number** — `0.1.0` now; `1.0.0` once the checks below are done.
-- **Which Android versions to claim** — built for 8 and up (API 26) but run only on Android 17.
-  Needs an older-Android run (an emulator would catch crashes; it is a download of about 1–1.5 GB,
-  awaiting your permission) or a higher minimum.
+- **Android versions** — decided 2026-10-05: **no testing on older Android versions.** The app is
+  built for Android 8 and up (API 26) and has only ever run on Android 17 (a Pixel 8 Pro); the README
+  says so. A release should say "tested on Android 17" and nothing more. If you would rather not
+  offer it to phones it was never run on, raise `minSdk` in `android/app/build.gradle.kts` (36 is
+  the target). The run on an older-Android emulator is dropped.
 - **The checks only you can do** — flash alignment by eye, tap tempo, headphones, Bluetooth, a
   real call, the notification, battery saver, TalkBack, rotation, a second phone, a long run.
 - **Google Play, if wanted** — a developer account, a store listing, a data-safety form, the
