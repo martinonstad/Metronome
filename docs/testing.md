@@ -311,6 +311,22 @@ varied by about ±25 ms between samples, so some flash jitter may be visible; th
 | Binding smoke test | M2 | The Kotlin ↔ Rust call path on a device or emulator |
 | Size gate | M4 | Fails the build if the release APK exceeds 10 MB |
 
+### Hardware checks on the signed release build (2026-10-05, Pixel 8 Pro)
+
+Release 0.9.0, signed with the real release key, installed next to the debug app. The user did the
+hardware checks by hand with the phone connected over USB while the app's log was recorded
+(`adb logcat -s Metronom`, which the release build writes too).
+
+| Check | Result |
+|---|---|
+| The signed release installs and starts; About says "Version 0.9.0" | Yes (adb) |
+| **Wired headphones unplugged while the click plays** | The log shows `Audio output is becoming noisy (headphones unplugged?); stopping` (09:34:19): **the service stops itself on the signed release build** |
+| Everything else the user tried (Bluetooth, a call, the notification and its Stop button, battery saver, flash timing, tap tempo, how it feels) | The user reports that it "seems to work", without details. **The log shows no other stop event**: no "Audio focus lost", no "engine stopped" line. So either those cases were not run, or they did not stop playback. They are **not recorded as verified** |
+
+Never seen to fire yet: the lost-audio-device stop (a Bluetooth device switching off mid-run), the
+refusal to start during a call, and the audio-focus stop on a real call (it was seen with another app's
+audio). Still not run by anyone: a TalkBack walk-through, screen rotation, a second phone.
+
 ## On-device timing checklist (physical Android phone)
 
 Automated tests prove the engine places beats correctly. They cannot prove what the phone's
