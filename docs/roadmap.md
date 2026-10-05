@@ -131,7 +131,10 @@ until a device is available).
       ([testing.md](testing.md#the-release-build-on-the-pixel-8-pro-2026-10-05)). **Not done:**
       your own release key (see [development.md](development.md#release-build)). An unsigned
       `bundleRelease` (4.1 MB) builds and holds the Rust and JNA libraries and the notices
-- [ ] Full [on-device checklist](testing.md#on-device-timing-checklist-physical-android-phone) passes
+- [~] Full [on-device checklist](testing.md#on-device-timing-checklist-physical-android-phone) passes:
+      the headphones-unplugged stop is confirmed in the log on the signed release build and the user
+      reports the rest "seems to work" ([testing.md](testing.md#hardware-checks-on-the-signed-release-build-2026-10-05-pixel-8-pro)).
+      Not seen: the lost-device stop, a real call, TalkBack, rotation, a second phone
 - [ ] Consider targeting API 37 (Android 17 background-audio rules): the platform is available
       from `sdkmanager` (`platforms;android-37.0`) but is not installed here and the app still
       targets 36; the foreground service is in place. Decided: stay on 36 for now (targeting 37 needs a

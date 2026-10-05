@@ -55,6 +55,28 @@ side is unverified. The app is built to install on Android 8 and up, but it has 
 on Android 17 and older versions are deliberately not tested: treat anything below 17 as
 unsupported.
 
+## Checking a release
+
+Releases are on the [Releases page](https://github.com/martinonstad/Metronome/releases) (an APK to
+install by hand, and its checksum). Every release APK is signed with the same key, so an update installs over the previous release, and
+you can check that an APK was signed by the maintainer. The signing certificate's SHA-256
+fingerprint is:
+
+```
+44:79:4E:C9:14:92:34:56:0B:3F:36:7F:56:59:72:3A:02:FF:E2:79:75:0B:98:FE:6F:6C:AF:BF:AD:C2:B4:A8
+```
+
+To check an APK you downloaded (this needs the Android SDK build tools):
+
+```bash
+apksigner verify --print-certs Metronom-0.9.0.apk
+```
+
+The line `Signer #1 certificate SHA-256 digest` must show the fingerprint above, written in lower case
+without the colons. If it shows anything else, do not install it. A release also comes with a
+`.sha256` file for the download itself (`shasum -a 256 -c Metronom-0.9.0.apk.sha256`). How releases are
+built and signed is in [docs/development.md](docs/development.md#release-build).
+
 ## Quick start (development)
 
 Requires macOS with Homebrew. Full setup is in [docs/development.md](docs/development.md).
