@@ -2,12 +2,7 @@ package no.onstad.metronom
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.draggable
-import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,337 +16,225 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import uniffi.metronom_ffi.EntryRecord
 import uniffi.metronom_ffi.Metronome
 import uniffi.metronom_ffi.SetlistDetail
 
+/** What the metronome is set to. */
+private data class Loaded(val bpm: Double, val beats: UInt)
+
+private fun Metronome.loaded() = Loaded(bpm(), beatsPerBar())
+
 /**
- * Play a setlist. The current song's tempo and bar length are loaded into the metronome; **Next
- * song** is one tap and the click keeps running. A song that is not in the library is skipped.
- * [index] is the current position in the setlist and is kept by the caller, so coming back to the
- * same setlist resumes where it was.
+ * Play a setlist: the whole list of songs, with the beat flash above it. Tap a song and the click
+ * starts with its tempo and bar length; tap another and the click keeps running and switches on
+ * the next beat; tap the song that is playing and the click stops. A song that is not in the
+ * library cannot be tapped.
+ *
+ * [selected] is the song tapped last (-1 for none) and is kept by the caller, so the row is still
+ * marked when you come back to the same setlist. Opening the page changes nothing in the
+ * metronome.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GigScreen(
   metronome: Metronome,
   store: LibraryStore,
   stem: String,
-  index: Int,
-  onIndexChange: (Int) -> Unit,
+  selected: Int,
+  onSelect: (Int) -> Unit,
   onStart: () -> Unit,
   onStop: () -> Unit,
   onBack: () -> Unit,
   onEdit: () -> Unit,
 ) {
-  val runningState = rememberRunning(metronome)
-  val running by runningState
-  val beatState = rememberBeatState(metronome, running, store.settings.visualOffsetMs)
+  val playback = rememberPlayback(metronome, onStart, onStop)
+  val beatState = rememberBeatState(metronome, playback.running, store.settings.visualOffsetMs)
 
   var detail by remember { mutableStateOf<SetlistDetail?>(null) }
-  var loaded by remember { mutableStateOf(false) }
-  var showList by remember { mutableStateOf(false) }
-
+  var ready by remember { mutableStateOf(false) }
   LaunchedEffect(stem, store.revision, store.state) {
     if (store.state is LibraryStore.State.Ready) {
       detail = store.read { it.setlist(stem) }
-      loaded = true
+      ready = true
     }
   }
 
   // Keep the display awake while the setlist is open, so it can be read from the music stand.
-  val view = LocalView.current
-  val keepAwake = store.settings.keepScreenOn
-  DisposableEffect(keepAwake) {
-    view.keepScreenOn = keepAwake
-    onDispose { view.keepScreenOn = false }
+  KeepScreenOn(store.settings.keepScreenOn)
+
+  // What the metronome is set to right now. It is followed so that a row only shows as playing
+  // while the click really has that song's tempo and bar length: a tempo changed on the main
+  // screen, or a click started there, does not light up a song.
+  var loaded by remember { mutableStateOf(metronome.loaded()) }
+  LaunchedEffect(metronome) {
+    while (true) {
+      loaded = metronome.loaded()
+      delay(500)
+    }
   }
 
   val entries = detail?.entries.orEmpty()
-  fun playable(i: Int) = entries.getOrNull(i)?.song != null
-  val current = index.coerceIn(0, maxOf(entries.lastIndex, 0))
-  val song = entries.getOrNull(current)?.song
+  val current = entries.getOrNull(selected)?.song
+  val playing =
+    if (playback.running && current != null && current.bpm == loaded.bpm && current.beats == loaded.beats) selected else -1
 
-  // Opening the setlist makes the current song the click, unless it already is (a rotation, or
-  // coming back from another screen), so a running click is not restarted for nothing. A song
-  // that is missing from the library is stepped over.
-  var entered by remember { mutableStateOf(false) }
-  LaunchedEffect(detail) {
-    if (entered || detail == null) return@LaunchedEffect
-    entered = true
-    val start = (current..entries.lastIndex).firstOrNull(::playable) ?: (current downTo 0).firstOrNull(::playable)
-    val first = start?.let { entries[it].song } ?: return@LaunchedEffect
-    if (start != current) onIndexChange(start)
-    if (metronome.bpm() != first.bpm || metronome.beatsPerBar() != first.beats) metronome.load(first)
-  }
-
-  fun go(target: Int) {
-    val next = entries.getOrNull(target)?.song ?: return
-    onIndexChange(target)
-    metronome.load(next)
-  }
-  val previous = (current - 1 downTo 0).firstOrNull(::playable)
-  val next = (current + 1..entries.lastIndex).firstOrNull(::playable)
-
-  // Spread over the screen when it fits; scrolls when it does not (a large font setting, a small phone).
-  BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
-    val available = maxHeight
-    val complete = loaded && detail != null && song != null
-    Column(
-      Modifier.fillMaxWidth()
-        .verticalScroll(rememberScrollState())
-        .padding(horizontal = 24.dp, vertical = 12.dp)
-        .heightIn(min = available - 24.dp),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = if (complete) Arrangement.SpaceBetween else Arrangement.Top,
-    ) {
-      Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-          TextButton(onClick = onBack) { Text("‹ ${stringResource(R.string.back)}") }
-          Text(
-            listOfNotNull(detail?.band, detail?.name).joinToString(" · "),
-            style = MaterialTheme.typography.titleMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.weight(1f),
-          )
-          val position =
-            if (entries.isEmpty()) null else stringResource(R.string.gig_position_description, current + 1, entries.size)
-          Text(
-            if (entries.isEmpty()) "" else stringResource(R.string.gig_position, current + 1, entries.size),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 8.dp).semantics { position?.let { contentDescription = it } },
-          )
-        }
-        if (complete) {
-          Spacer(Modifier.height(10.dp))
-          FlashBar(beatState)
-          Spacer(Modifier.height(10.dp))
-          BeatDots(song!!.beats.toInt(), beatState)
-        }
-      }
-
-      if (!loaded) {
-        Text(stringResource(R.string.opening_library), Modifier.padding(top = 24.dp))
-      } else if (detail == null) {
-        Text(stringResource(R.string.setlist_gone), Modifier.padding(top = 24.dp))
-      } else if (song == null) {
-        Column(
-          Modifier.fillMaxWidth().padding(top = 48.dp),
-          verticalArrangement = Arrangement.spacedBy(16.dp),
-          horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-          Text(stringResource(R.string.gig_nothing_to_play), style = MaterialTheme.typography.titleMedium)
-          OutlinedButton(onClick = onEdit) { Text(stringResource(R.string.edit_setlist)) }
-        }
-      } else {
-        // A screen reader announces the new song when Next is pressed.
-        Column(
-          Modifier.fillMaxWidth().padding(vertical = 12.dp).semantics(mergeDescendants = true) {
-            liveRegion = LiveRegionMode.Polite
-          },
-          horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-          Text(
-            song.title,
-            style = MaterialTheme.typography.headlineMedium,
-            textAlign = TextAlign.Center,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-          )
-          Text(
-            song.bpm.roundToInt().toString(),
-            fontSize = numeralSize(88),
-            style = MaterialTheme.typography.displayLarge,
-          )
-          Text(
-            "BPM · " + pluralStringResource(R.plurals.beats_count, song.beats.toInt(), song.beats.toInt()),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-          if (song.notes.isNotBlank()) {
-            Spacer(Modifier.height(6.dp))
-            Text(
-              song.notes,
-              style = MaterialTheme.typography.bodyMedium,
-              textAlign = TextAlign.Center,
-              maxLines = 2,
-              overflow = TextOverflow.Ellipsis,
-            )
-          }
-        }
-
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-          val upcoming = next?.let { entries[it].song }
-          Text(
-            if (upcoming == null) {
-              stringResource(R.string.gig_last_song)
-            } else {
-              stringResource(R.string.gig_next_up, upcoming.title, upcoming.bpm.roundToInt())
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-          )
-          Spacer(Modifier.height(10.dp))
-          FilledTonalButton(
-            onClick = { if (running) onStop() else onStart() },
-            modifier = Modifier.fillMaxWidth().height(64.dp),
-          ) {
-            Text(stringResource(if (running) R.string.stop else R.string.start), fontSize = 22.sp)
-          }
-          Spacer(Modifier.height(10.dp))
-          Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            val previousDescription = stringResource(R.string.gig_previous)
-            OutlinedButton(
-              onClick = { previous?.let(::go) },
-              enabled = previous != null,
-              modifier = Modifier.width(72.dp).height(72.dp).semantics { contentDescription = previousDescription },
-            ) {
-              Text("‹", fontSize = 28.sp)
-            }
-            Button(
-              onClick = { next?.let(::go) },
-              enabled = next != null,
-              modifier = Modifier.weight(1f).height(72.dp),
-            ) {
-              Text(stringResource(if (next != null) R.string.gig_next else R.string.gig_end), fontSize = 24.sp)
-            }
-          }
-          SongListHandle(onOpen = { showList = true })
-        }
-      }
+  fun tap(index: Int) {
+    val song = entries.getOrNull(index)?.song ?: return
+    if (index == playing) {
+      playback.stop()
+      return
     }
+    // A running click switches on the next beat, which becomes beat 1 of this song.
+    metronome.load(song)
+    loaded = metronome.loaded()
+    onSelect(index)
+    playback.start()
   }
 
-  if (showList) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val scope = rememberCoroutineScope()
-    ModalBottomSheet(onDismissRequest = { showList = false }, sheetState = sheetState) {
-      SongList(
-        entries = entries,
-        current = current,
-        onPick = { picked ->
-          go(picked)
-          scope.launch { sheetState.hide() }.invokeOnCompletion { showList = false }
-        },
+  Column(Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 24.dp, vertical = 12.dp)) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+      TextButton(onClick = onBack) { Text("‹ ${stringResource(R.string.back)}") }
+      Text(
+        listOfNotNull(detail?.band, detail?.name).joinToString(" · "),
+        style = MaterialTheme.typography.titleMedium,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.weight(1f),
       )
+      if (detail != null) TextButton(onClick = onEdit) { Text(stringResource(R.string.edit)) }
     }
-  }
-}
 
-/** The strip at the bottom: tap it or swipe up to open the list of songs. */
-@Composable
-private fun SongListHandle(onOpen: () -> Unit) {
-  val description = stringResource(R.string.gig_open_list)
-  Column(
-    Modifier.fillMaxWidth()
-      .padding(top = 4.dp)
-      .draggable(
-        orientation = Orientation.Vertical,
-        state = rememberDraggableState {},
-        onDragStopped = { velocity -> if (velocity < -400f) onOpen() },
-      )
-      .clickable(role = Role.Button, onClick = onOpen)
-      .semantics { contentDescription = description }
-      .heightIn(min = 48.dp)
-      .padding(vertical = 8.dp),
-    horizontalAlignment = Alignment.CenterHorizontally,
-    verticalArrangement = Arrangement.Center,
-  ) {
-    Box(
-      Modifier.width(40.dp).height(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.outline)
-    )
-    Spacer(Modifier.height(4.dp))
-    Text(
-      stringResource(R.string.gig_song_list),
-      style = MaterialTheme.typography.bodySmall,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-  }
-}
-
-/** Every song in the setlist; tapping one jumps straight to it. A song that is missing is greyed out. */
-@Composable
-private fun SongList(entries: List<EntryRecord>, current: Int, onPick: (Int) -> Unit) {
-  val listState = rememberLazyListState(initialFirstVisibleItemIndex = (current - 2).coerceAtLeast(0))
-  LazyColumn(state = listState, modifier = Modifier.padding(horizontal = 16.dp)) {
-    itemsIndexed(entries) { i, entry ->
-      val song = entry.song
-      val shape = RoundedCornerShape(12.dp)
-      Row(
-        Modifier.fillMaxWidth()
-          .clip(shape)
-          .background(if (i == current) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
-          .then(if (song != null) Modifier.clickable { onPick(i) } else Modifier)
-          .padding(horizontal = 12.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    if (!ready) {
+      Text(stringResource(R.string.opening_library), Modifier.padding(top = 24.dp))
+    } else if (detail == null) {
+      Text(stringResource(R.string.setlist_gone), Modifier.padding(top = 24.dp))
+    } else if (entries.none { it.song != null }) {
+      Column(
+        Modifier.fillMaxWidth().padding(top = 48.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
       ) {
-        Text(
-          "${i + 1}",
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-          modifier = Modifier.width(32.dp),
-        )
-        Column(Modifier.weight(1f)) {
-          Text(entry.title, style = MaterialTheme.typography.bodyLarge)
-          if (song == null) {
-            Text(
-              stringResource(R.string.missing_song),
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.error,
-            )
-          }
-        }
-        if (song != null) {
-          Text(
-            "${song.bpm.roundToInt()} · ${song.beats}",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        Text(stringResource(R.string.gig_nothing_to_play), style = MaterialTheme.typography.titleMedium)
+        OutlinedButton(onClick = onEdit) { Text(stringResource(R.string.edit_setlist)) }
+      }
+    } else {
+      Column(Modifier.fillMaxWidth().padding(vertical = 10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        FlashBar(beatState)
+        Spacer(Modifier.height(10.dp))
+        BeatDots(loaded.beats.toInt(), beatState)
+      }
+      // Opens with the song tapped last in view.
+      val listState = rememberLazyListState(initialFirstVisibleItemIndex = (selected - 2).coerceAtLeast(0))
+      LazyColumn(state = listState, modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        itemsIndexed(entries) { index, entry ->
+          SongRow(
+            index = index,
+            entry = entry,
+            playing = index == playing,
+            marked = index == selected,
+            onTap = { tap(index) },
           )
         }
+      }
+    }
+  }
+}
+
+/**
+ * One song of the setlist: its number, title and notes, with the tempo and beats on the right.
+ * The song that is playing is highlighted and shows a stop sign in place of its number; the one
+ * tapped last stays lightly marked when the click is stopped. A missing song is greyed out.
+ */
+@Composable
+private fun SongRow(index: Int, entry: EntryRecord, playing: Boolean, marked: Boolean, onTap: () -> Unit) {
+  val song = entry.song
+  val colors = MaterialTheme.colorScheme
+  val background =
+    when {
+      playing -> colors.primaryContainer
+      marked -> colors.surfaceVariant
+      else -> Color.Transparent
+    }
+  val content =
+    when {
+      song == null -> colors.onSurfaceVariant
+      playing -> colors.onPrimaryContainer
+      else -> colors.onSurface
+    }
+  val detailColor = if (playing) colors.onPrimaryContainer else colors.onSurfaceVariant
+  val playingLabel = stringResource(R.string.playing)
+  val action = stringResource(if (playing) R.string.gig_stop_song else R.string.gig_start_song)
+  Row(
+    Modifier.fillMaxWidth()
+      .clip(RoundedCornerShape(12.dp))
+      .background(background)
+      .then(
+        if (song != null) {
+          Modifier.clickable(role = Role.Button, onClickLabel = action, onClick = onTap).semantics {
+            if (playing) stateDescription = playingLabel
+          }
+        } else {
+          Modifier
+        }
+      )
+      .heightIn(min = 64.dp)
+      .padding(horizontal = 12.dp, vertical = 10.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Text(
+      if (playing) "■" else "${index + 1}",
+      style = MaterialTheme.typography.titleMedium,
+      color = detailColor,
+      modifier = Modifier.width(36.dp),
+    )
+    Column(Modifier.weight(1f)) {
+      Text(entry.title, style = MaterialTheme.typography.titleLarge, color = content)
+      if (song == null) {
+        Text(stringResource(R.string.missing_song), style = MaterialTheme.typography.bodySmall, color = colors.error)
+      } else if (song.notes.isNotBlank()) {
+        Text(
+          song.notes,
+          style = MaterialTheme.typography.bodyMedium,
+          color = detailColor,
+          maxLines = 2,
+          overflow = TextOverflow.Ellipsis,
+        )
+      }
+    }
+    if (song != null) {
+      Column(Modifier.padding(start = 12.dp), horizontalAlignment = Alignment.End) {
+        Text(song.bpm.roundToInt().toString(), style = MaterialTheme.typography.headlineSmall, color = content)
+        Text(
+          pluralStringResource(R.plurals.beats_count, song.beats.toInt(), song.beats.toInt()),
+          style = MaterialTheme.typography.bodySmall,
+          color = detailColor,
+        )
       }
     }
   }

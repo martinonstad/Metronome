@@ -140,6 +140,28 @@ until a device is available).
       targets 36; the foreground service is in place. Decided: stay on 36 for now (targeting 37 needs a
       download and a re-test; revisit before Google Play)
 
+### Changes after 0.9.0, from using the app (2026-11-16)
+
+Version **0.10.0** (version code 1000, so it installs over 0.9.0 and keeps the library). The
+signed release was installed over 0.9.0 on the Pixel on 2026-11-16 and the library was still there
+([testing.md](testing.md#release-0100-installed-over-090-on-the-pixel-8-pro-2026-11-16)).
+
+- [x] **Save as song** on the main screen: opens the new-song page with the tempo and beats that
+      are set, and the song can be added to setlists in the same save
+- [x] The song page (new and edit) is built like the main screen and is live: flash, the number
+      to type, −/+, slider, beats per bar, tap tempo, Start/Stop. "Play this song now" is removed
+- [x] The setlist page is the whole list: tap a song to start its click, tap it again to stop,
+      tap another to switch while the click keeps running. Next / Previous and the swipe-up list
+      are removed
+- [x] Run on the Pixel with adb, files read off the phone and the beat log: saving from the main
+      screen into a setlist, the song page's controls and its refusals, a 92.5 BPM song kept
+      exact, the click switching without a restart on the song page and on the setlist page, and
+      the three pages at double text size
+      ([testing.md](testing.md#save-as-song-the-live-song-page-and-the-setlist-list-on-the-pixel-8-pro-2026-11-16-debug-build)).
+      **Not run:** rotation. **Found, not changed:** at double text size on a 320 dp-wide screen a
+      long title on the setlist page breaks in the middle of a word. **Not judged:** how the rows
+      feel with a real finger, and whether ■ reads as "tap to stop"
+
 ### M5 — iPhone app
 
 - [ ] Xcode project, SwiftUI screens mirroring M2–M3, bindings from the same Rust core

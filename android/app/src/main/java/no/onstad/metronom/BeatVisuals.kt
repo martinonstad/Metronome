@@ -31,7 +31,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlin.math.exp
-import kotlinx.coroutines.delay
 import uniffi.metronom_ffi.BeatState
 import uniffi.metronom_ffi.Metronome
 import uniffi.metronom_ffi.SongRecord
@@ -59,22 +58,6 @@ internal fun Metronome.load(song: SongRecord) {
   setBpm(song.bpm)
   setBeatsPerBar(song.beats)
   restartBar()
-}
-
-/**
- * Whether the click is running. The Rust side is the source of truth, so this polls it and the
- * screen follows the foreground service.
- */
-@Composable
-internal fun rememberRunning(metronome: Metronome): State<Boolean> {
-  val running = remember { mutableStateOf(metronome.isRunning()) }
-  LaunchedEffect(metronome) {
-    while (true) {
-      running.value = metronome.isRunning()
-      delay(500)
-    }
-  }
-  return running
 }
 
 /**

@@ -327,6 +327,78 @@ Never seen to fire yet: the lost-audio-device stop (a Bluetooth device switching
 refusal to start during a call, and the audio-focus stop on a real call (it was seen with another app's
 audio). Still not run by anyone: a TalkBack walk-through, screen rotation, a second phone.
 
+### Save as song, the live song page and the setlist list on the Pixel 8 Pro (2026-11-16, debug build)
+
+The main screen got "Save as song", the song page was rebuilt on the live metronome with the main
+screen's controls, and the setlist page became the whole list of songs
+([design.md](design.md#decision-log)). The sections above that describe the song editor and the gig
+screen record the **previous** design; they are kept as they were written.
+
+Automated: `scripts/test-all.sh` passes: the 216 core and 21 FFI tests (unchanged, no Rust code was
+touched), the debug build, lint with 0 errors and no new warning, the license notices, and the
+release build (2.3 MB, the same three permissions).
+
+On the phone: the debug build was installed over the debug app and driven with adb (taps on the
+text found in UI dumps, screenshots, the files read off the phone, the beat log). The display was
+at 1008 × 2244 (448 dp wide). The test library had five songs (one hand-written at 92.5 BPM), the
+setlist "Friday Gig" (band The Band; five lines, one of them a song that is not in the library, and
+the note "Soundcheck at 18:00.") and the empty setlist "Wedding" (band Duo). Beat spacings are
+taken from the beat log as frame time minus the beat's age.
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Main screen at the normal text size | **Fits without scrolling**; "Save as song" sits beside "Tap tempo" |
+| 2 | Set 97 BPM and 5 beats, Save as song | The new-song page shows 97 and 5 (and fits on one screen) |
+| 3 | Title "Test Tune", Add to setlist, tick Friday Gig, Save | The page said "Will be added to: Friday Gig"; after Save the main screen is back; `songs.md` has `Test Tune, 97, 5 beats`; `friday-gig.md` ends with `6. Test Tune` and keeps its note |
+| 4 | Song page controls | − three times 100 → 97, + → 98; 999 is refused with "Enter a tempo from 30 to 300"; 88 is accepted. Start: the service runs, beats 682 ms apart (681.8 expected). Three taps on Tap tempo about 0.6 s apart: 99, beats 606.1 ms apart (606.06 for exactly 99, so the tempo is a whole number). Stop: the service is gone |
+| 5 | Save with a taken title ("sweet child") and with an empty title | "There's already a song called “sweet child”." and "Enter a title"; the files are unchanged (md5) both times |
+| 6 | Change the tempo, Back without Save | The files are byte-identical; the main screen shows the tempo that was left (99) |
+| 7 | The hand-written 92.5 BPM song: change only the notes, Save | The page shows 93; the file still says `92.5` and has the new notes |
+| 8 | Open a song (75 BPM) while the click runs at 92.5 | Beats 648.6 ms apart, then 800.0 ms from the beat after the tap, counted from beat 1 again; **the click never stopped** |
+| 9 | Edit a song that is in Friday Gig and tick Friday Gig again | The page says "In: Friday Gig"; the dialog says "×1 in this setlist"; after Save the setlist has the song twice (`7. Hotel California`) |
+| 10 | The app killed in the background on the song page (`am kill`; a new process id), then reopened | The edited title, tempo 127, 5 beats, the notes, "In: Friday Gig" and "Will be added to: Wedding" are all back; no file changed. **Rotation itself was not tried** (see below) |
+| 11 | Setlist page: tap Superstition | The row is highlighted and shows ■; the service runs; beats 600.0 ms apart |
+| 12 | Tap Waltz for Debby while it plays | 600.0 ms, then 454.5 ms from the next beat with beats 1–3; **no restart** |
+| 13 | Tap the playing song | The click stops (the service is gone); the row stays lightly marked |
+| 14 | Tap the missing song | Nothing happens (the click and the highlighted row are unchanged) |
+| 15 | Main screen and back; then + on the main screen while a song plays | The marked row is kept. After the tempo change no row is lit and the click still runs; tapping the song lights it again, tapping once more stops |
+| 16 | Two taps on one song at the same moment, and two about half a second apart | At the same moment: one start, the second tap is ignored. Half a second apart: start, then stop. No crash either way |
+| 17 | Edit in the header | Opens the setlist editor; its Back goes to the setlists list |
+| 18 | Text size 2.0 (the debug override) | The main screen still fits, with both buttons on one row; the song page scrolls down to Save; the setlist page shows everything, with the header title shortened ("The Band · Frida…") |
+| 19 | Text size 2.0 on a 320 dp-wide screen (density 1.4) | Nothing is cut off. The main screen and the song page scroll; "Tap tempo" and "Save as song" wrap onto two lines as whole buttons. On the setlist page the rows get tall and **a long title breaks in the middle of a word** ("Supers / tition"), because the title shares the row with the number and the tempo; the header title is shortened to "The B…" |
+
+The first Start after the reinstall brought up Android's notification question; it was answered on
+the phone (allowed), and playback started.
+
+Afterwards the debug override was removed and the library that was on the phone before the test
+was put back (the same md5 for every file).
+
+**Not run:** rotating the phone (that means changing the phone's rotation setting or turning it
+by hand). Whether Start flips to Stop "at once" cannot be timed through adb: each look at the
+screen takes about a second. **Not judged by anyone:** how large and easy the rows are to hit on a
+stand, whether ■ reads as "tap to stop", how the pages look in bright light, and the pages with
+TalkBack.
+
+### Release 0.10.0 installed over 0.9.0 on the Pixel 8 Pro (2026-11-16)
+
+The signed release build of 0.10.0 (`scripts/build-release.sh`, the same release key: the signer's
+SHA-256 is the one in the README) was installed with `adb install -r` over the 0.9.0 release that
+holds a real library. The library of a release build cannot be read with `run-as`, so it was
+compared through the app's own screens.
+
+| Check | Result |
+|---|---|
+| The update installs | Yes; the first-install date is unchanged (an update, not a new install), version code 1000 |
+| The app starts (R8-shrunk build of the new pages) | Yes, no crash in the log |
+| About | "Version 0.10.0" |
+| Songs list, before and after | 21 songs both times; the visible rows are identical |
+| Setlists list, before and after | 2 setlists with 7 and 13 songs both times; identical |
+| Setlist page: tap the first song, tap it again | The click starts (the service runs, the row shows ■) and stops |
+| Song page from the songs list; "Save as song" from the main screen | Both open with their controls; left with Back, nothing saved; the songs list is still identical |
+
+Not checked in the release build: saving a song or adding it to a setlist (nothing was written to
+the real library on purpose; that path was run in the debug build, see above).
+
 ## On-device timing checklist (physical Android phone)
 
 Automated tests prove the engine places beats correctly. They cannot prove what the phone's

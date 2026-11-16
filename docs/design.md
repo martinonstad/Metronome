@@ -5,6 +5,10 @@ mockups. The mockups themselves are not kept in the repository; the wireframes b
 their layout. Items marked *default* are choices made where the discussion left a gap — change
 them by editing this document and telling the maintainer.
 
+Revised on 2026-11-16 after using the app: the main screen can save what is set as a song, the
+song page is built like the main screen and plays the click, and the setlist page is the whole
+list of songs (see the [decision log](#decision-log)).
+
 ## Principles
 
 - **A gig tool first.** Few taps, big targets, nothing to navigate while playing.
@@ -17,7 +21,7 @@ them by editing this document and telling the maintainer.
 | Mode | What you do |
 |---|---|
 | **Manual** | Set the tempo and beats per bar yourself and press Start |
-| **Setlist** | Choose a setlist, then step through its songs; each song sets the tempo and bar length for you |
+| **Setlist** | Choose a setlist, then tap a song in its list; the song sets the tempo and bar length and the click starts |
 
 ## What the metronome controls
 
@@ -53,7 +57,7 @@ added later.
 │  [−] ───────●─────── [+] │   slider 30–300
 │                          │
 │   Beats per bar  [−] 4 [+]
-│        [ Tap tempo ]     │
+│ [Tap tempo] [Save as song]
 │                          │
 │ ┌──────────────────────┐ │
 │ │        Start         │ │   large, bottom of the screen
@@ -68,47 +72,71 @@ added later.
   The first beat of the bar flashes brighter. A bar longer than 16 beats shows "Beat n of m"
   instead of dots.
 - Flash style is fixed (bar plus dots). Other styles were considered and not wanted.
+- **Save as song** opens the new-song page. That page shows the same metronome, so the tempo and
+  beats you have set come along; Save or Back returns here, and a running click keeps running.
+- Tap tempo sets a whole-number tempo, so the number shown is the tempo that plays and is saved.
 
-### Gig screen (setlist mode)
+### Setlist page (setlist mode)
 
 ```
 ┌──────────────────────────┐
-│ ← The Band · Friday Gig  │   back to manual · band · setlist       3 / 7
-│ ████████████████████████ │   flash bar
+│ ‹ Back  The Band · Friday Gig  Edit
+│ ████████████████████████ │   flash bar and beat dots stay above the list
 │        ●  ○  ○  ○        │
-│      Superstition        │   current song
-│          100             │   tempo, large
-│       BPM · 4 beats      │
-│ Next: Sweet Child o' Mine · 125
-│ ┌──────────────────────┐ │
-│ │        Start         │ │
-│ └──────────────────────┘ │
-│ [ ‹ ] [    Next song    ] │   Next is the biggest target; previous is small
+│  1  Superstition     100 │   tap a song: the click starts
+│                  4 beats │
+│  2  Nowhere Man          │   not in the song list: greyed, cannot be tapped
+│ ■3  Waltz for Debby  132 │   the song that is playing is highlighted;
+│     Intro 8 bars 3 beats │   tap it again: the click stops
+│  4  Sweet Child      125 │   tap another: the click switches to it
 └──────────────────────────┘
 ```
 
-- **Next song** is one tap. **Previous** is a smaller button beside it. Both step over a song
-  that is not in the library (a missing song).
-- The song's **notes** (key, capo, intro length) are shown under the tempo.
-- **The song list** opens by swiping up from the bottom; tapping a song jumps straight to it.
-- **The click runs for the whole song.** Start and Stop are separate from changing song.
-- **Changing song while playing** *(default)*: the tempo and bar length switch on the next beat,
-  and that beat becomes beat 1 of the new song (the accented one). The click keeps running.
-- **Changing song while stopped** *(default)*: the new song is loaded; the click starts when you
-  press Start.
-- On the last song, Next shows "End of setlist" and does nothing.
+- **The whole setlist is on the page**, each song with its tempo, beats per bar and **notes** (key,
+  capo, intro length). There is no Next, Previous or Start button: the list is the control.
+- **Tap a song** and the click starts with its tempo and bar length. **Tap the song that is
+  playing** and the click stops. **Tap another song while the click runs** and it switches on the
+  next beat, which becomes beat 1 of the new song (the accented one); the click keeps running.
+- A song is shown as playing only while the click really has its tempo and bar length. If you
+  change the tempo on the main screen, no row is lit; tapping a song loads it again.
+- The song tapped last stays marked when the click is stopped, and when you come back to the same
+  setlist (kept for the setlist played last, until the app is closed by the system). Opening the
+  page changes nothing in the metronome. The app does not reopen a setlist on launch:
+  `last_setlist` in `settings.md` is reserved for that.
+- A song that is not in the library (a missing song) is greyed out and cannot be tapped.
+- **Edit** opens the setlist editor.
 - The screen stays awake while a setlist is open (setting `keep_screen_on`).
-- **Back** returns to the manual screen; the click keeps running. Opening the same setlist again
-  resumes at the same song (the position is kept for the setlist played last, until the app is
-  closed by the system). The app does not reopen a setlist on launch: `last_setlist` in
-  `settings.md` is reserved for that.
+- **Back** returns to the manual screen; the click keeps running.
 
 ### Songs
 
 - **Songs list:** every song in one list, searchable, with its tempo and beats per bar. Tap a
   song to edit it; "Add song" creates one.
-- **Song editor:** title, tempo (number and slider), beats per bar, optional notes. Save, delete,
-  and "Play this song now" (loads it into the manual screen).
+- **Song page (new and edit):** built like the main screen and played on the same metronome, so a
+  tempo can be set exactly and by ear:
+
+  ```
+  ‹ Back                   New song
+  [ Title                         ]
+  ████████████████████████   flash bar, beat dots
+             120             tap the number to type
+     [−] ───────●─────── [+]
+       Beats per bar [−] 4 [+]
+           [ Tap tempo ]
+  [           Start           ]
+  [ Notes (optional)              ]
+  Setlists                [Add to setlist]
+  [Delete]  [        Save         ]
+  ```
+
+  - Opening a song loads it into the metronome, so a click that is running switches to it. A new
+    song starts from whatever the metronome is set to.
+  - **Add to setlist** ticks any number of setlists; when the song is saved it is added at the
+    end of each. An existing song shows the setlists it is in already; adding it again puts it in
+    twice.
+  - **Save** writes the song, then the setlists. A title that is empty or taken is refused and
+    nothing is written. Leaving without Save changes no file (the metronome keeps the tempo you
+    set). A tempo with decimals in a hand-written file is kept as long as you do not change it.
 - **Delete** asks for confirmation and says which setlists use the song; **deleting removes it
   from all of them** (so no setlist is left with a missing song).
 - Song titles are unique (compared ignoring case).
@@ -116,7 +144,7 @@ added later.
 ### Setlists
 
 - **Setlists list:** grouped by band/project. Each row shows the setlist name and song count.
-  **Tapping the row plays it** (opens the gig screen); the row has **Edit, Copy and Delete**
+  **Tapping the row plays it** (opens the setlist page); the row has **Edit, Copy and Delete**
   buttons. "New setlist" creates one and opens its editor.
 - **Setlist editor:** name, band/project (typed, with the existing bands offered as quick
   choices), the songs in order, and:
@@ -159,12 +187,15 @@ added later.
 | More flash styles? | Not needed |
 | Where does the sound choice live? | Global setting, not per song |
 | Tapping a setlist row? | Plays it; Edit, Copy and Delete are buttons on the row (decided 2026-10-05) |
-| Notes on the gig screen? | Yes, under the tempo (decided 2026-10-05) |
-| A missing song in a setlist while playing? | Next and Previous step over it (decided 2026-10-05) |
+| Notes on the gig screen? | Yes, under the tempo (decided 2026-10-05); under each song's title since the setlist page became a list (2026-11-16) |
+| A missing song in a setlist while playing? | Next and Previous step over it (decided 2026-10-05); since 2026-11-16 there is no Next, and a missing song cannot be tapped |
 | Resume position | Kept for the setlist played last; no reopening on launch yet (decided 2026-10-05) |
 | Another app's audio? | Default: the click takes the audio focus and stops when another app or a call takes it; a setting lets it play together with other audio (decided 2026-10-05) |
 | Auto Backup | Stays on for the `Metronom` folder only (decided 2026-10-05) |
 | Flash on/off switch | Not added: the flash is a thin bar and small dots, below the size at which flashing is a risk (decided 2026-10-05; revisit if anyone needs it) |
+| Saving what is set on the main screen? | A "Save as song" button opens the new-song page with the tempo and beats already there; the song can be added to setlists in the same save (decided 2026-11-16) |
+| What does the song page look like? | Like the main screen, and live: flash, the number to type, −/+, slider, beats, tap tempo and Start/Stop, because an exact tempo is hard to hit with a slider alone. "Play this song now" is gone: the page plays (decided 2026-11-16) |
+| What does the setlist page look like? | The whole list. Tap a song to start the click, tap it again to stop, tap another to switch while the click keeps running. The flash stays at the top, notes are under each song, Edit is in the header. Replaces the one-song view with Next / Previous and the swipe-up list (decided 2026-11-16) |
 
 ## Not now
 
