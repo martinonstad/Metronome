@@ -161,8 +161,8 @@ tempo and Start/Stop. It has been run on the Pixel 8 Pro and its controls checke
 results are in [testing.md](testing.md#the-one-screen-main-screen-on-the-pixel-8-pro-manual-2026-10-04-debug-build).
 
 Also built (run on the Pixel; see [testing.md](testing.md#the-songs-screens-on-the-pixel-8-pro-manual-2026-10-04-debug-build)): the **songs list** (search, add) and the **song
-editor** (title, tempo, beats, notes, save, delete with a note of which setlists use the song, and
-"Play this song now"). `LibraryStore` opens the library off the main thread, runs every call on a
+page** (title, the main screen's tempo controls on the live metronome, notes, the setlists to add
+the song to, save, and delete with a note of which setlists use the song; see below). `LibraryStore` opens the library off the main thread, runs every call on a
 background thread and keeps the song list, the setlists grouped by band and a change counter as
 Compose state; navigation is one current `Screen` with Back leading to its parent, kept across
 rotation. A change that has started always finishes and refreshes those lists, even if the screen
@@ -175,24 +175,37 @@ built too; see [testing.md](testing.md#the-setlists-screens-on-the-pixel-8-pro-m
 Every edit is saved at once, so the editor has no Save button, and the editor allows one change at
 a time so a second tap meant for the old order cannot land on the new one.
 
-The **gig screen** opens from a setlist row. It loads the current song's tempo and bar length into
-the `Metronome` (`Metronome.load`: tempo, bar length, then `restart_bar`, so a running click
-switches on the next beat and that beat is beat 1 of the new bar). **Next song** and the small
-Previous step through the playable songs (a song that is missing from the library is skipped); a
-swipe up or a tap on the strip at the bottom opens the song list to jump to any song. The
-position is kept for the most recently played setlist, so coming back to it resumes at the same
-song; opening the screen does not restart a click that already has that song's tempo and bar
-length (a rotation, or returning from another screen). The screen is kept awake while it is open
-(`keep_screen_on` in `settings.md`). The flash bar, beat dots and the per-frame beat state are
-shared with the manual screen (`BeatVisuals.kt`).
+The **setlist page** (`GigScreen.kt`) opens from a setlist row and shows every song of the
+setlist. Tapping a song loads its tempo and bar length into the `Metronome` (`Metronome.load`:
+tempo, bar length, then `restart_bar`, so a running click switches on the next beat and that beat
+is beat 1 of the new bar) and starts the click if it is not running; tapping the song that is
+playing stops it. A song that is missing from the library cannot be tapped. Opening the page
+changes nothing in the metronome. The song tapped last is kept for the most recently played
+setlist, so it is still marked when you come back. A row is shown as playing only while the click
+runs **and** the metronome still has that song's tempo and bar length (the page polls both), so a
+click started or changed on the main screen never lights up a song. The screen is kept awake while
+the page is open (`keep_screen_on` in `settings.md`).
+
+The main screen and the **song page** (`SongEditorScreen.kt`) are built from the same parts
+(`MetronomePanel.kt`): `MetronomeState` (tempo and bar length read from, and written to, the
+shared `Metronome`), `TempoControls`, `BarControls`, and `Playback`. The song page therefore has no
+tempo of its own: it edits the live metronome and Save writes what the metronome has. A song is
+loaded into the metronome when its page is opened (in `MainActivity`, on the navigation event, so
+a rotation does not undo your edits). The page also keeps the tempo and beats it last showed in the
+saved instance state and puts them back if the process was restarted, because a new process starts
+with a fresh metronome and the page must never save a tempo you did not set. `Playback` polls
+`is_running` but flips its value the moment a start or stop is asked for, so a button or a setlist
+row reacts at once; it ignores a new request until the engine has confirmed the previous one (or
+two seconds have passed), so a quick double tap cannot stop the service while it is starting. The
+flash bar, beat dots and the per-frame beat state are shared by all three pages (`BeatVisuals.kt`).
 
 The **settings screen** holds the sound (click, wood, beep, rim), the volume, the flash timing and
 keep-awake, and the **export and import** of your files. `LibraryStore` keeps the settings as
 Compose state and tells the app when they change, and `MetronomApp` applies sound and volume to
 the shared `Metronome` (at launch and on every change), so they hold whatever screen or service
 is running. A slider changes the click while you drag and is saved when you let go (volume in
-whole percent, flash timing in steps of 10 ms). Keep-awake applies to the gig screen and to the
-manual screen while the click runs.
+whole percent, flash timing in steps of 10 ms). Keep-awake applies to the setlist page, and to the
+manual screen and the song page while the click runs.
 
 Export builds the zip first and only then asks where to save it (Android's file picker,
 `CreateDocument`), so a failure never leaves an empty file. Import reads the chosen file (at most

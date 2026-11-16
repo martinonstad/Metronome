@@ -17,14 +17,17 @@ sealed interface Screen {
   /** Sound, volume, flash offset, keep-awake, and export/import of your files. */
   data object Settings : Screen
 
-  /** Playing a setlist; [stem] is the setlist's file name without `.md`. */
+  /** Playing a setlist from its list of songs; [stem] is the setlist's file name without `.md`. */
   data class Gig(val stem: String) : Screen
 
   /** The setlist editor; [stem] is the setlist's file name without `.md`. */
   data class EditSetlist(val stem: String) : Screen
 
-  /** The song editor; [title] is the song being edited, or `null` for a new song. */
-  data class EditSong(val title: String?) : Screen
+  /**
+   * The song page; [title] is the song being edited, or `null` for a new song. [fromManual] is
+   * set when "Save as song" on the main screen opened it, so that Back and Save return there.
+   */
+  data class EditSong(val title: String?, val fromManual: Boolean = false) : Screen
 
   /** Where Back goes from here. */
   val parent: Screen?
@@ -37,7 +40,7 @@ sealed interface Screen {
         About -> Settings
         is EditSetlist -> Setlists
         is Gig -> Manual
-        is EditSong -> Songs
+        is EditSong -> if (fromManual) Manual else Songs
       }
 }
 
@@ -53,7 +56,12 @@ val ScreenSaver =
         Screen.About -> "about"
         is Screen.EditSetlist -> "setlist:${it.stem}"
         is Screen.Gig -> "gig:${it.stem}"
-        is Screen.EditSong -> if (it.title == null) "new" else "edit:${it.title}"
+        is Screen.EditSong ->
+          when {
+            it.title != null -> "edit:${it.title}"
+            it.fromManual -> "new:manual"
+            else -> "new"
+          }
       }
     },
     restore = {
@@ -65,6 +73,7 @@ val ScreenSaver =
         it.startsWith("gig:") -> Screen.Gig(it.removePrefix("gig:"))
         it.startsWith("setlist:") -> Screen.EditSetlist(it.removePrefix("setlist:"))
         it == "new" -> Screen.EditSong(null)
+        it == "new:manual" -> Screen.EditSong(null, fromManual = true)
         it.startsWith("edit:") -> Screen.EditSong(it.removePrefix("edit:"))
         else -> Screen.Manual
       }

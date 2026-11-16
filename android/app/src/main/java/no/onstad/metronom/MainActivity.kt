@@ -51,9 +51,10 @@ class MainActivity : ComponentActivity() {
     val metronome = metronomApp.metronome
     val library = metronomApp.library
     var screen: Screen by rememberSaveable(stateSaver = ScreenSaver) { mutableStateOf(Screen.Manual) }
-    // Where you are in the setlist being played; kept so the same setlist resumes at its song.
+    // The song tapped last in the setlist being played (-1: none yet); kept so the same setlist
+    // still shows it when you come back.
     var gigStem by rememberSaveable { mutableStateOf<String?>(null) }
-    var gigIndex by rememberSaveable { mutableIntStateOf(0) }
+    var gigIndex by rememberSaveable { mutableIntStateOf(-1) }
 
     BackHandler(enabled = screen.parent != null) { screen = screen.parent ?: Screen.Manual }
 
@@ -67,6 +68,7 @@ class MainActivity : ComponentActivity() {
           onOpenSongs = { screen = Screen.Songs },
           onOpenSetlists = { screen = Screen.Setlists },
           onOpenSettings = { screen = Screen.Settings },
+          onSaveAsSong = { screen = Screen.EditSong(null, fromManual = true) },
         )
       Screen.Settings ->
         SettingsScreen(
@@ -83,7 +85,7 @@ class MainActivity : ComponentActivity() {
           onPlay = { stem ->
             if (stem != gigStem) {
               gigStem = stem
-              gigIndex = 0
+              gigIndex = -1
             }
             screen = Screen.Gig(stem)
           },
@@ -94,8 +96,8 @@ class MainActivity : ComponentActivity() {
           metronome = metronome,
           store = library,
           stem = current.stem,
-          index = if (gigStem == current.stem) gigIndex else 0,
-          onIndexChange = {
+          selected = if (gigStem == current.stem) gigIndex else -1,
+          onSelect = {
             gigStem = current.stem
             gigIndex = it
           },
@@ -115,18 +117,21 @@ class MainActivity : ComponentActivity() {
         SongsScreen(
           store = library,
           onBack = { screen = Screen.Manual },
-          onOpen = { screen = Screen.EditSong(it) },
+          onOpen = { title ->
+            // A song is edited on the live metronome, so opening it makes it the current tempo
+            // and bar length (a running click switches on the next beat).
+            title?.let(library::song)?.let(metronome::load)
+            screen = Screen.EditSong(title)
+          },
         )
       is Screen.EditSong ->
         SongEditorScreen(
+          metronome = metronome,
           store = library,
           originalTitle = current.title,
-          onClose = { screen = Screen.Songs },
-          onPlay = { song ->
-            // Load the song into the manual metronome; the new bar starts on the next beat.
-            metronome.load(song)
-            screen = Screen.Manual
-          },
+          onStart = ::onStartRequested,
+          onStop = ::stopPlayback,
+          onClose = { screen = current.parent ?: Screen.Manual },
         )
     }
   }

@@ -28,10 +28,10 @@ can edit by hand and move to a new phone.
 
 | Area | What it does |
 |---|---|
-| Metronome | One screen, no scrolling. Tempo 30–300 BPM: tap the number to type it, or use the slider, −/+ or tap tempo. Beats per bar 1–99; the first beat of each bar is accented. Four synthesized sounds, volume |
+| Metronome | One screen, no scrolling. Tempo 30–300 BPM: tap the number to type it, or use the slider, −/+ or tap tempo. Beats per bar 1–99; the first beat of each bar is accented. Four synthesized sounds, volume. What you have set can be saved as a song, and added to setlists, in one go |
 | Visual | A flash bar and one dot per beat, driven by the audio clock so they line up with what you hear |
-| Library | Every song in one list; setlists tagged with a band/project; create, edit, delete, reorder and copy in the app |
-| Gig mode | Pick a setlist, then **Next song** is one tap; the click keeps running and switches tempo on the next beat. Jump to any song from a list |
+| Library | Every song in one list; setlists tagged with a band/project; create, edit, delete, reorder and copy in the app. A song is edited on the live metronome, with the same controls as the main screen |
+| Gig mode | Pick a setlist and see all its songs. Tap a song to start its click, tap it again to stop; tap another and the click keeps running and switches tempo on the next beat |
 | Files | Everything stored as markdown; export/import as a zip |
 | Phone | Plays with the screen locked (foreground service), pauses on calls, optional keep-screen-on |
 
@@ -46,7 +46,7 @@ See [docs/design.md](docs/design.md) for the reasoning.
 | **M0** Setup + audio spike | Done except a listening check and a second device: the audio is steady and glitch-free on one phone (see [testing](docs/testing.md#measured-results)) |
 | **M1** Core in Rust | Done. Engine (65 tests) and the markdown library: songs table, setlists, settings, zip export/import ([file format](docs/file-format.md); 145 library tests). Not yet connected to the app |
 | **M2** Android main screen | Built and checked on the phone with adb; judging the flash by eye and settings are still to do |
-| **M3** Library and gig mode | In progress. The library is exposed to the app; all its screens are built and work on the phone: songs, setlists, the gig screen (one tap for the next song while the click keeps running), settings, and export/import of a zip. Not yet judged by hand: how it feels in use, and a transfer to a second physical phone |
+| **M3** Library and gig mode | In progress. The library is exposed to the app; all its screens are built and work on the phone: songs (edited on the live metronome), setlists, the setlist page (tap a song to start or stop its click), settings, and export/import of a zip. Not yet judged by hand: how it feels in use, and a transfer to a second physical phone |
 | **M4** Hardening + release build | In progress. Interruptions, a first accessibility pass, the app icon, the release build (2.4 MB) and lint are done. Still to do: the on-device checklist with headphones, Bluetooth and a call, a TalkBack walk-through, and your own signing key |
 | **M5** iPhone app | Not started (needs Xcode) |
 

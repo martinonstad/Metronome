@@ -5,7 +5,7 @@ plugins {
 
 // The one place the version is set. versionCode is derived from it (0.9.0 -> 900, 1.0.0 -> 10000),
 // so it always grows with the version; scripts/build-release.sh reads this line too.
-val appVersionName = "0.9.0"
+val appVersionName = "0.10.0"
 val appVersionCode =
     appVersionName.substringBefore('-').split('.').let { (major, minor, patch) ->
         major.toInt() * 10_000 + minor.toInt() * 100 + patch.toInt()
