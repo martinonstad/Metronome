@@ -162,6 +162,20 @@ signed release was installed over 0.9.0 on the Pixel on 2026-11-16 and the libra
       long title on the setlist page breaks in the middle of a word. **Not judged:** how the rows
       feel with a real finger, and whether ■ reads as "tap to stop"
 
+### Tabs and lists (2026-11-18), version 0.11.0
+
+- [x] A tab bar on every page (Metronome, Lists, Settings) instead of Back buttons; each tab
+      remembers its page
+- [x] "All songs" is a built-in list at the top of the Lists tab; the Songs pages are gone
+- [x] The Metronome tab is also the song editor: it shows the current song, Save stores its tempo
+      and beats, the title opens title, notes, setlists and Delete; ✎ on any list row opens a song
+      there
+- [x] A setlist is edited in an Edit mode on its list page; the separate editor page is gone
+- [x] Beats per bar: − and + around the beat dots, above the tempo
+- [x] Run on the Pixel with adb: 13 checks, including the files after every change, the click
+      switching without a restart, and a restart in the background
+      ([testing.md](testing.md#tabs-and-lists-2026-11-18)). **Not run:** rotation
+
 ### M5 — iPhone app
 
 - [ ] Xcode project, SwiftUI screens mirroring M2–M3, bindings from the same Rust core

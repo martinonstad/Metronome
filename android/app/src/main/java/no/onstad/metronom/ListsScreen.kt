@@ -5,14 +5,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
@@ -33,67 +32,73 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import uniffi.metronom_ffi.SetlistSummary
 
 /**
- * Every setlist, grouped by band. Tap one to play it; edit, copy and delete are on each row.
+ * The first page of the Lists tab: "All songs" at the top, then the setlists grouped by band.
+ * Tapping a row opens the list; a setlist is renamed, copied or deleted in its own Edit mode.
+ * "New setlist" creates one and opens it in Edit mode.
  */
 @Composable
-fun SetlistsScreen(
-  store: LibraryStore,
-  onBack: () -> Unit,
-  onPlay: (stem: String) -> Unit,
-  onEdit: (stem: String) -> Unit,
-) {
+fun ListsScreen(store: LibraryStore, onOpen: (ListId) -> Unit, onCreated: (stem: String) -> Unit) {
   var showNew by remember { mutableStateOf(false) }
-  var toDelete by remember { mutableStateOf<SetlistSummary?>(null) }
-  var problem by remember { mutableStateOf<String?>(null) }
-  val scope = rememberCoroutineScope()
+  var showWarnings by remember { mutableStateOf(false) }
   val groups = store.setlistGroups
   val total = groups.sumOf { it.setlists.size }
 
-  Column(Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 24.dp, vertical = 12.dp)) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-      TextButton(onClick = onBack) { Text("‹ ${stringResource(R.string.back)}") }
-      Spacer(Modifier.weight(1f))
-      Text(pluralStringResource(R.plurals.setlists_count, total, total), style = MaterialTheme.typography.titleMedium)
-    }
-
+  Column(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 12.dp)) {
     when (val state = store.state) {
       is LibraryStore.State.Opening -> Text(stringResource(R.string.opening_library), Modifier.padding(top = 24.dp))
       is LibraryStore.State.Failed ->
         Text(state.message, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 24.dp))
       is LibraryStore.State.Ready -> {
-        problem?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(vertical = 8.dp)) }
-        if (total == 0) {
-          EmptySetlists(modifier = Modifier.weight(1f))
-        } else {
-          LazyColumn(Modifier.weight(1f)) {
-            for (group in groups) {
-              item(key = "band:${group.band}") {
-                Text(
-                  group.band ?: stringResource(R.string.no_band),
-                  style = MaterialTheme.typography.labelLarge,
-                  color = MaterialTheme.colorScheme.primary,
-                  modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
-                )
+        if (store.warnings.isNotEmpty()) {
+          TextButton(onClick = { showWarnings = true }, modifier = Modifier.fillMaxWidth()) {
+            Text(
+              pluralStringResource(R.plurals.warnings_banner, store.warnings.size, store.warnings.size),
+              color = MaterialTheme.colorScheme.tertiary,
+            )
+          }
+        }
+        LazyColumn(Modifier.weight(1f)) {
+          item(key = "all") {
+            ListRow(
+              name = stringResource(R.string.all_songs),
+              detail = pluralStringResource(R.plurals.songs_count, store.songs.size, store.songs.size),
+              missing = 0,
+              onOpen = { onOpen(ListId.AllSongs) },
+            )
+            HorizontalDivider()
+          }
+          if (total == 0) {
+            item(key = "empty") {
+              Column(Modifier.fillMaxWidth().padding(vertical = 24.dp)) {
+                Text(stringResource(R.string.setlists_empty_title), style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                Text(stringResource(R.string.setlists_empty_body), color = MaterialTheme.colorScheme.onSurfaceVariant)
               }
-              items(group.setlists, key = { it.stem }) { setlist ->
-                SetlistRow(
-                  setlist,
-                  onPlay = { onPlay(setlist.stem) },
-                  onEdit = { onEdit(setlist.stem) },
-                  onCopy = {
-                    scope.launch {
-                      problem = (store.change { it.copySetlist(setlist.stem) } as? Outcome.Failed)?.message
-                    }
-                  },
-                  onDelete = { toDelete = setlist },
-                )
-                HorizontalDivider()
-              }
+            }
+          }
+          for (group in groups) {
+            item(key = "band:${group.band}") {
+              Text(
+                group.band ?: stringResource(R.string.no_band),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
+              )
+            }
+            items(group.setlists, key = { it.stem }) { setlist: SetlistSummary ->
+              ListRow(
+                name = setlist.name,
+                detail = pluralStringResource(R.plurals.songs_count, setlist.songCount.toInt(), setlist.songCount.toInt()),
+                missing = setlist.missingCount.toInt(),
+                onOpen = { onOpen(ListId.Setlist(setlist.stem)) },
+              )
+              HorizontalDivider()
             }
           }
         }
@@ -117,7 +122,7 @@ fun SetlistsScreen(
         when (val outcome = store.change { it.createSetlist(name, band) }) {
           is Outcome.Ok -> {
             showNew = false
-            onEdit(outcome.value)
+            onCreated(outcome.value)
             null
           }
           is Outcome.Failed -> outcome.message
@@ -126,69 +131,42 @@ fun SetlistsScreen(
     )
   }
 
-  toDelete?.let { setlist ->
+  if (showWarnings) {
     AlertDialog(
-      onDismissRequest = { toDelete = null },
-      title = { Text(stringResource(R.string.delete_setlist_title, setlist.name)) },
-      text = { Text(stringResource(R.string.delete_setlist_body)) },
-      confirmButton = {
-        TextButton(
-          onClick = {
-            toDelete = null
-            scope.launch {
-              problem = (store.change { it.deleteSetlist(setlist.stem) } as? Outcome.Failed)?.message
-            }
+      onDismissRequest = { showWarnings = false },
+      title = { Text(stringResource(R.string.warnings_title)) },
+      text = {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+          for (w in store.warnings.take(12)) {
+            val where = if (w.line != null) "${w.file}, line ${w.line}" else w.file
+            Text("$where: ${w.detail}", style = MaterialTheme.typography.bodySmall)
           }
-        ) {
-          Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
+          if (store.warnings.size > 12) Text("…", style = MaterialTheme.typography.bodySmall)
         }
       },
-      dismissButton = { TextButton(onClick = { toDelete = null }) { Text(stringResource(R.string.cancel)) } },
+      confirmButton = { TextButton(onClick = { showWarnings = false }) { Text(stringResource(R.string.close)) } },
     )
   }
 }
 
+/** One list in the overview: its name, how many songs, and how many are missing. */
 @Composable
-private fun SetlistRow(
-  setlist: SetlistSummary,
-  onPlay: () -> Unit,
-  onEdit: () -> Unit,
-  onCopy: () -> Unit,
-  onDelete: () -> Unit,
-) {
-  val tight = PaddingValues(horizontal = 8.dp)
-  Row(Modifier.fillMaxWidth().clickable(onClick = onPlay).padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-    Column(Modifier.weight(1f)) {
-      Text(setlist.name, style = MaterialTheme.typography.bodyLarge)
-      Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+private fun ListRow(name: String, detail: String, missing: Int, onOpen: () -> Unit) {
+  Row(
+    Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onOpen).heightIn(min = 56.dp).padding(vertical = 10.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Text(name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+    Column(horizontalAlignment = Alignment.End) {
+      Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+      if (missing > 0) {
         Text(
-          pluralStringResource(R.plurals.songs_count, setlist.songCount.toInt(), setlist.songCount.toInt()),
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          stringResource(R.string.songs_missing, missing),
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.error,
         )
-        if (setlist.missingCount > 0u) {
-          Text(
-            stringResource(R.string.songs_missing, setlist.missingCount.toInt()),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.error,
-          )
-        }
       }
     }
-    TextButton(onClick = onEdit, contentPadding = tight) { Text(stringResource(R.string.edit)) }
-    TextButton(onClick = onCopy, contentPadding = tight) { Text(stringResource(R.string.copy)) }
-    TextButton(onClick = onDelete, contentPadding = tight) {
-      Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
-    }
-  }
-}
-
-@Composable
-private fun EmptySetlists(modifier: Modifier = Modifier) {
-  Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-    Text(stringResource(R.string.setlists_empty_title), style = MaterialTheme.typography.titleLarge)
-    Spacer(Modifier.height(8.dp))
-    Text(stringResource(R.string.setlists_empty_body), color = MaterialTheme.colorScheme.onSurfaceVariant)
   }
 }
 

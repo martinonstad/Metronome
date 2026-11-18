@@ -399,6 +399,54 @@ compared through the app's own screens.
 Not checked in the release build: saving a song or adding it to a setlist (nothing was written to
 the real library on purpose; that path was run in the debug build, see above).
 
+### Tabs and lists (2026-11-18)
+
+The tab bar (Metronome, Lists, Settings), "All songs" as a list, the Metronome tab as the song
+editor, a setlist's Edit mode, and beats per bar around the beat dots
+([design.md](design.md#screens)). The sections above record the earlier designs as they were.
+
+Automated: `scripts/test-all.sh` passes: the 216 core and 21 FFI tests (no Rust code changed), the
+debug build, lint with 0 errors and no unused resources, the licence notices (now with
+`material-icons-core` and `kotlin-stdlib-common`), and the release build (2.35 MB, the same three
+permissions).
+
+**Found and fixed in the licence script:** Gradle's periodic cache cleanup had deleted the
+libraries' POM files (4 were left), so `scripts/generate-licenses.sh` wrote most Android libraries
+under "license not found". The script now notices missing POM files and resolves the dependencies
+once more with `--refresh-dependencies`, which downloads them again.
+
+**On the Pixel 8 Pro** (debug build, driven with adb; the debug app's library was backed up,
+swapped for the test library of 2026-11-16 and put back afterwards with the same md5 for every
+file):
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Tab bar on every page, no Back buttons | Yes. Re-tapping Lists on a list goes to the overview; re-tapping Settings on About goes to Settings |
+| 2 | System Back | Edit mode → the list → the overview → the Metronome tab → out of the app; About → Settings; after ✎ (also after the app was restarted in the background), back to the list |
+| 3 | A tab remembers its page | Friday Gig was still open after visiting the Metronome tab |
+| 4 | All songs | Search "sw" leaves Sweet Child; tap Waltz for Debby: the service runs and the row shows ■; tap again: stopped |
+| 5 | A setlist | Superstition: beats 600 ms apart; tap Waltz for Debby: 454.5 ms from the next beat, **no restart**; the missing song does nothing |
+| 6 | ✎ on Sweet Child while Waltz plays | The Metronome tab shows "Sweet Child", "Intro 8 bars", 125, "Saved", Stop; the click went to 480 ms without stopping; Back returned to the list with Sweet Child lit |
+| 7 | Save | +2 BPM and one more beat: "Save" lights up, nothing is written until it is tapped; then `songs.md` says 127 and 5 beats, the setlist files are unchanged, and the button says "Saved" |
+| 8 | Song details | A taken title ("There's already a song called “superstition”.") and an empty one ("Enter a title") are refused with no file changed. Rename to "Sweet Child Mine", notes "Intro 4 bars" and add to Wedding in one save: `songs.md`, `friday-gig.md` (renamed in place, note kept) and `wedding.md` all follow. Delete Hotel California: the dialog names Friday Gig (×1); the song leaves `songs.md` and the setlist, and the Metronome tab shows "No song" |
+| 9 | ✕ and Save as song | ✕ gives "No song" and keeps 127 / 5; "Save as song" with the title "Late Tune" adds it at 127 / 5 |
+| 10 | Edit mode | Opening Edit and leaving without a change: **files byte-identical**. Move up, remove the missing song, add Half Step, rename to "Friday Show" (the file name stays `friday-gig.md`), Copy (opens "Friday Show (copy)" in Edit mode, `friday-gig-copy.md`), Delete the copy (back to the overview, file gone). New setlist "Rehearsal" opens in Edit mode |
+| 11 | Beats − and + around the dots | Up to 15 and 16 beats: the dots shrink and stay on one line between the buttons |
+| 12 | The app killed in the background (`am kill`, a new process) with Superstition at an unsaved 102 | Back with Superstition, 102 and "Save"; no file changed |
+| 13 | Double text size; double text size on a 320 dp-wide screen | At double size everything fits; the Metronome tab still fits without scrolling. On the narrow screen the Metronome tab and Settings scroll, the "Metronome" tab label is shortened to "Metron…", and **song titles in a list broke in the middle of words** ("Supe/rstiti/on"): **fixed**, a narrow row now puts the tempo under the title and the title grows at most 1.3×, so titles break between words. At normal size the rows are unchanged |
+
+Also changed after looking at the screens: on All songs the playing song's ■ pushed its title to the
+right; the number column is now always there.
+
+**An incident while testing:** during the run another app (a shopping app) came to the front, and
+the test script's taps, which looked for text on whatever was on screen, landed there: one tap on a
+help heading, a select-all and delete key press, and two Back presses. Nothing in that app was
+activated. The script now refuses to tap or type unless Metronom (debug) is in front and the phone
+is unlocked.
+
+**Not checked:** rotation, the Edit-mode rows on a narrow screen at double text size (titles there
+still break inside words, as in the old editor), how it feels with a real finger, and TalkBack.
+
 ## On-device timing checklist (physical Android phone)
 
 Automated tests prove the engine places beats correctly. They cannot prove what the phone's

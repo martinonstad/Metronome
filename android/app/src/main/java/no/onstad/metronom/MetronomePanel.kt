@@ -4,21 +4,21 @@ import android.os.SystemClock
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -38,10 +39,11 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withTimeoutOrNull
+import uniffi.metronom_ffi.BeatState
 import uniffi.metronom_ffi.Metronome
 
-// The parts the main screen and the song page are both built from, so setting a tempo works the
-// same way in both places.
+// The parts of the metronome view: the tempo and bar length as state, the controls that set
+// them, and starting and stopping the click (also used by the list pages).
 
 /**
  * The tempo and bar length of the shared [Metronome] as Compose state. The Rust side is the
@@ -225,27 +227,40 @@ internal fun TempoControls(state: MetronomeState, modifier: Modifier = Modifier,
   }
 }
 
-/** Beats per bar and tap tempo; [beside] is placed next to the tap-tempo button. */
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * The beats per bar: − and + on either side of the beat dots, and "4 beats" under them, so the
+ * bar length is set where it is seen.
+ */
 @Composable
-internal fun BarControls(state: MetronomeState, modifier: Modifier = Modifier, beside: @Composable () -> Unit = {}) {
+internal fun BeatsControl(state: MetronomeState, beatState: State<BeatState?>, modifier: Modifier = Modifier) {
+  val fewer = stringResource(R.string.fewer_beats)
+  val more = stringResource(R.string.more_beats)
+  val count = pluralStringResource(R.plurals.beats_count, state.beats, state.beats)
   Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-    // The label and the stepper wrap onto two lines when the text size leaves no room for one.
-    FlowRow(
-      horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
-      verticalArrangement = Arrangement.Center,
-      itemVerticalAlignment = Alignment.CenterVertically,
-    ) {
-      Text(stringResource(R.string.beats_per_bar), style = MaterialTheme.typography.bodyMedium)
-      NumberStepper(value = state.beats, range = 1..MAX_BEATS, onChange = state::setBeatsPerBar)
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+      FilledTonalButton(
+        onClick = { state.setBeatsPerBar(state.beats - 1) },
+        enabled = state.beats > 1,
+        modifier = Modifier.semantics { contentDescription = fewer },
+      ) {
+        Text("−")
+      }
+      Box(Modifier.weight(1f).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+        BeatDots(state.beats, beatState)
+      }
+      FilledTonalButton(
+        onClick = { state.setBeatsPerBar(state.beats + 1) },
+        enabled = state.beats < MAX_BEATS,
+        modifier = Modifier.semantics { contentDescription = more },
+      ) {
+        Text("+")
+      }
     }
-    Spacer(Modifier.height(8.dp))
-    FlowRow(
-      horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-      verticalArrangement = Arrangement.Center,
-    ) {
-      OutlinedButton(onClick = state::tap) { Text(stringResource(R.string.tap)) }
-      beside()
-    }
+    Text(
+      count,
+      style = MaterialTheme.typography.bodySmall,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      modifier = Modifier.padding(top = 4.dp),
+    )
   }
 }

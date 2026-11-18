@@ -1,66 +1,81 @@
 package no.onstad.metronom
 
 import android.content.pm.ApplicationInfo
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import uniffi.metronom_ffi.Metronome
-import uniffi.metronom_ffi.SettingsRecord
+import uniffi.metronom_ffi.SongRecord
 
 /**
- * The manual metronome, all on one screen: the beat flash and dots, the tempo (tap the number to
- * type it, or use the slider), beats per bar, tap tempo and Start/Stop. **Save as song** opens the
- * new-song page, which shows the same metronome, so the tempo and beats you set come along.
+ * The Metronome tab: the metronome, and the editor of the current song, in one view.
+ *
+ * At the top is the current song ([currentSong], or "No song"): tap it or ✎ for its title, notes
+ * and setlists; ✕ puts it away and keeps the tempo. Below are the beat flash, the beats per bar
+ * (− and + around the dots), the tempo (tap the number to type it, the slider, − and +), tap
+ * tempo and Save, and Start/Stop. Save stores the tempo and beats in the song; with no song it
+ * reads "Save as song" and names a new one.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MetronomeScreen(
   metronome: Metronome,
+  store: LibraryStore,
+  currentSong: String?,
+  onCurrentSongChange: (String?) -> Unit,
   onStart: () -> Unit,
   onStop: () -> Unit,
-  settings: SettingsRecord,
-  onOpenSongs: () -> Unit,
-  onOpenSetlists: () -> Unit,
-  onOpenSettings: () -> Unit,
-  onSaveAsSong: () -> Unit,
 ) {
   val playback = rememberPlayback(metronome, onStart, onStop)
   val running = playback.running
   val state = rememberMetronomeState(metronome)
+  val settings = store.settings
+  val song = currentSong?.let(store::song)
+  var showDetails by remember { mutableStateOf(false) }
+  var problem by remember { mutableStateOf<String?>(null) }
+  var saving by remember { mutableStateOf(false) }
+  val scope = rememberCoroutineScope()
   var diagnostics by remember { mutableStateOf("") }
   val debuggable = (LocalContext.current.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
@@ -77,9 +92,22 @@ fun MetronomeScreen(
     }
   }
 
+  val changed = song != null && (state.exactBpm != song.bpm || state.beats != song.beats.toInt())
+
+  fun saveTempo(song: SongRecord) {
+    if (saving) return
+    saving = true
+    problem = null
+    val updated = SongRecord(song.title, state.exactBpm, state.beats.toUInt(), song.notes)
+    scope.launch {
+      (store.change { it.updateSong(song.title, updated) } as? Outcome.Failed)?.let { problem = it.message }
+      saving = false
+    }
+  }
+
   // The content is spread over the screen when it fits and scrolls when it does not (a large
   // font setting, a small phone), so nothing is ever cut off.
-  BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding()) {
+  BoxWithConstraints(Modifier.fillMaxSize()) {
     val available = maxHeight
     Column(
       modifier =
@@ -91,35 +119,28 @@ fun MetronomeScreen(
       verticalArrangement = Arrangement.SpaceBetween,
     ) {
       Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        // Whole buttons wrap onto a second line when the text size leaves no room for one row.
-        FlowRow(
-          Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween,
-          verticalArrangement = Arrangement.Center,
-        ) {
-          TextButton(onClick = onOpenSongs) { Text(stringResource(R.string.songs)) }
-          TextButton(onClick = onOpenSetlists) { Text(stringResource(R.string.setlists)) }
-          TextButton(onClick = onOpenSettings) { Text(stringResource(R.string.settings)) }
-        }
-        Text(
-          stringResource(R.string.mode_manual),
-          style = MaterialTheme.typography.labelLarge,
-          color = MaterialTheme.colorScheme.onSecondaryContainer,
-          modifier =
-            Modifier.clip(CircleShape)
-              .background(MaterialTheme.colorScheme.secondaryContainer)
-              .padding(horizontal = 16.dp, vertical = 4.dp),
-        )
+        SongHeader(song, onEdit = { showDetails = true }, onClear = { onCurrentSongChange(null) })
         Spacer(Modifier.height(14.dp))
         FlashBar(beatState)
         Spacer(Modifier.height(14.dp))
-        BeatDots(state.beats, beatState)
+        BeatsControl(state, beatState)
       }
 
       TempoControls(state, Modifier.padding(vertical = 12.dp))
 
-      BarControls(state, Modifier.padding(vertical = 12.dp)) {
-        OutlinedButton(onClick = onSaveAsSong) { Text(stringResource(R.string.save_as_song)) }
+      Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        FlowRow(
+          horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+          verticalArrangement = Arrangement.Center,
+        ) {
+          OutlinedButton(onClick = state::tap) { Text(stringResource(R.string.tap)) }
+          when {
+            song == null -> OutlinedButton(onClick = { showDetails = true }) { Text(stringResource(R.string.save_as_song)) }
+            changed -> FilledTonalButton(onClick = { saveTempo(song) }, enabled = !saving) { Text(stringResource(R.string.save)) }
+            else -> OutlinedButton(onClick = {}, enabled = false) { Text(stringResource(R.string.saved)) }
+          }
+        }
+        problem?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp)) }
       }
 
       Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -137,6 +158,54 @@ fun MetronomeScreen(
           )
         }
       }
+    }
+  }
+
+  if (showDetails) {
+    SongDetailsDialog(
+      store = store,
+      song = song,
+      bpm = state.exactBpm,
+      beats = state.beats,
+      onDismiss = { showDetails = false },
+      onSaved = {
+        showDetails = false
+        onCurrentSongChange(it)
+      },
+      onDeleted = {
+        showDetails = false
+        onCurrentSongChange(null)
+      },
+    )
+  }
+}
+
+/** The current song's title and notes ("No song" when there is none), ✎ to edit them and ✕ to put the song away. */
+@Composable
+private fun SongHeader(song: SongRecord?, onEdit: () -> Unit, onClear: () -> Unit) {
+  val editLabel = stringResource(R.string.edit_song_details)
+  Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+    Column(Modifier.weight(1f).clickable(role = Role.Button, onClickLabel = editLabel, onClick = onEdit).padding(vertical = 4.dp)) {
+      Text(
+        song?.title ?: stringResource(R.string.no_song),
+        style = MaterialTheme.typography.headlineSmall,
+        color = if (song == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+      )
+      if (song != null && song.notes.isNotBlank()) {
+        Text(
+          song.notes,
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          maxLines = 2,
+          overflow = TextOverflow.Ellipsis,
+        )
+      }
+    }
+    IconButton(onClick = onEdit) { Icon(Icons.Filled.Edit, contentDescription = editLabel) }
+    if (song != null) {
+      IconButton(onClick = onClear) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.clear_song)) }
     }
   }
 }

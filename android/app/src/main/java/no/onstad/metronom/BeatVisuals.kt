@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -114,7 +115,8 @@ internal fun FlashBar(state: State<BeatState?>) {
 
 /**
  * One dot per beat of the bar, the first one larger; the dot of the beat being heard swells with
- * the flash. A bar longer than [MAX_DOTS] beats shows a "Beat n of m" label instead.
+ * the flash. The dots shrink to stay on one line when the bar is too long for the width they are
+ * given. A bar longer than [MAX_DOTS] beats shows a "Beat n of m" label instead.
  */
 @Composable
 internal fun BeatDots(beats: Int, state: State<BeatState?>) {
@@ -125,20 +127,25 @@ internal fun BeatDots(beats: Int, state: State<BeatState?>) {
   }
   val normal = MaterialTheme.colorScheme.outline
   val accent = MaterialTheme.colorScheme.primary
-  Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-    repeat(beats) { index ->
-      val dotSize = if (index == 0) 22.dp else 15.dp
-      Box(
-        Modifier.graphicsLayer {
-            val current = state.value
-            val swell = if (current != null && current.beat == index.toUInt()) flashIntensity(current) else 0f
-            scaleX = 1f + 0.4f * swell
-            scaleY = scaleX
-          }
-          .size(dotSize)
-          .clip(CircleShape)
-          .background(if (index == 0) accent else normal)
-      )
+  BoxWithConstraints(contentAlignment = Alignment.Center) {
+    // The natural width: a 22 dp first dot, 15 dp dots, 8 dp gaps.
+    val natural = 22.dp + 15.dp * (beats - 1) + 8.dp * (beats - 1)
+    val scale = if (maxWidth < natural) maxWidth / natural else 1f
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp * scale), verticalAlignment = Alignment.CenterVertically) {
+      repeat(beats) { index ->
+        val dotSize = (if (index == 0) 22.dp else 15.dp) * scale
+        Box(
+          Modifier.graphicsLayer {
+              val current = state.value
+              val swell = if (current != null && current.beat == index.toUInt()) flashIntensity(current) else 0f
+              scaleX = 1f + 0.4f * swell
+              scaleY = scaleX
+            }
+            .size(dotSize)
+            .clip(CircleShape)
+            .background(if (index == 0) accent else normal)
+        )
+      }
     }
   }
 }

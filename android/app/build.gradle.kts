@@ -5,7 +5,7 @@ plugins {
 
 // The one place the version is set. versionCode is derived from it (0.9.0 -> 900, 1.0.0 -> 10000),
 // so it always grows with the version; scripts/build-release.sh reads this line too.
-val appVersionName = "0.10.0"
+val appVersionName = "0.11.0"
 val appVersionCode =
     appVersionName.substringBefore('-').split('.').let { (major, minor, patch) ->
         major.toInt() * 10_000 + minor.toInt() * 100 + patch.toInt()
@@ -104,6 +104,8 @@ dependencies {
   implementation(libs.androidx.compose.ui)
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.compose.material3)
+  // A handful of icons (the tab bar, edit and close); R8 drops the rest.
+  implementation(libs.androidx.compose.material.icons.core)
   debugImplementation(libs.androidx.compose.ui.tooling)
 
   // Required at runtime by the UniFFI-generated Kotlin bindings; the aar carries the native part.

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -51,7 +50,7 @@ private const val MAX_OFFSET_MS = 500
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SettingsScreen(store: LibraryStore, metronome: Metronome, onBack: () -> Unit, onOpenAbout: () -> Unit) {
+fun SettingsScreen(store: LibraryStore, metronome: Metronome, onOpenAbout: () -> Unit) {
   val scope = rememberCoroutineScope()
   val settings = store.settings
   var message by remember { mutableStateOf<String?>(null) }
@@ -65,15 +64,9 @@ fun SettingsScreen(store: LibraryStore, metronome: Metronome, onBack: () -> Unit
   }
 
   Column(
-    Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 12.dp),
+    Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 12.dp),
     verticalArrangement = Arrangement.spacedBy(16.dp),
   ) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-      TextButton(onClick = onBack) { Text("‹ ${stringResource(R.string.back)}") }
-      Spacer(Modifier.weight(1f))
-      Text(stringResource(R.string.settings), style = MaterialTheme.typography.titleMedium)
-    }
-
     when (val state = store.state) {
       is LibraryStore.State.Opening -> Text(stringResource(R.string.opening_library))
       is LibraryStore.State.Failed -> Text(state.message, color = MaterialTheme.colorScheme.error)

@@ -1,12 +1,8 @@
 package no.onstad.metronom
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -16,14 +12,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.TextUnit
@@ -84,25 +77,3 @@ internal fun numeralSize(base: Int, maxScale: Float = 1.3f): TextUnit =
     val plain = base.dp.toPx()
     base.sp.toPx().coerceIn(plain, plain * maxScale).toDp().toSp()
   }
-
-/** A − / number / + control for whole numbers in `range`; the buttons say what they do to a screen reader. */
-@Composable
-internal fun NumberStepper(value: Int, range: IntRange, onChange: (Int) -> Unit) {
-  val fewer = stringResource(R.string.fewer_beats)
-  val more = stringResource(R.string.more_beats)
-  Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-    FilledTonalButton(
-      onClick = { onChange((value - 1).coerceIn(range)) },
-      modifier = Modifier.semantics { contentDescription = fewer },
-    ) {
-      Text("−")
-    }
-    Text(value.toString(), style = MaterialTheme.typography.headlineMedium)
-    FilledTonalButton(
-      onClick = { onChange((value + 1).coerceIn(range)) },
-      modifier = Modifier.semantics { contentDescription = more },
-    ) {
-      Text("+")
-    }
-  }
-}
