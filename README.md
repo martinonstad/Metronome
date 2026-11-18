@@ -5,13 +5,20 @@ per bar on one screen, see the beat flash in time with the click, and step throu
 one tap per song. Everything you save — settings, songs, setlists — is a plain markdown file you
 can edit by hand and move to a new phone.
 
-> **Status: early development.** The engine is written and well tested, the audio has been
-> measured on one phone (a Pixel 8 Pro: steady for 30+ minutes with the screen off, including in
-> deep Doze on battery, with no underruns in the power-saving mode), and the one-screen main
-> screen is built and its controls work on the phone (whether the flash looks in time with the
-> click is still for a human to judge). The song/setlist library exists in the core and is
-> tested, but no screens use it yet; gig mode and the iPhone app are not built. The design was agreed on 2026-10-04: see [docs/design.md](docs/design.md).
-> Progress is in the [roadmap](docs/roadmap.md).
+> **Status: pre-release, version 0.11.0 (18 November 2026).**
+>
+> - **What works:** everything in the features table is built and works on one phone, a Pixel 8 Pro
+>   with Android 17. The audio has been measured there: steady for 30+ minutes with the screen off,
+>   including in deep Doze on battery, with no underruns in the power-saving mode. Every screen has
+>   been driven on it with adb.
+> - **Where to get it:** signed builds are on the
+>   [Releases page](https://github.com/martinonstad/Metronome/releases).
+> - **Still for a human to judge or try:** whether the flash looks in time with the click, tap
+>   tempo, Bluetooth, a real call, TalkBack, rotation and a second phone.
+> - **Not started:** the iPhone app.
+>
+> The design is in [docs/design.md](docs/design.md) (last revised 2026-11-18); progress is in the
+> [roadmap](docs/roadmap.md).
 
 ## Goals
 
@@ -44,12 +51,15 @@ See [docs/design.md](docs/design.md) for the reasoning.
 
 | Milestone | State |
 |---|---|
-| **M0** Setup + audio spike | Done except a listening check and a second device: the audio is steady and glitch-free on one phone (see [testing](docs/testing.md#measured-results)) |
-| **M1** Core in Rust | Done. Engine (65 tests) and the markdown library: songs table, setlists, settings, zip export/import ([file format](docs/file-format.md); 145 library tests). Not yet connected to the app |
-| **M2** Android main screen | Built and checked on the phone with adb; judging the flash by eye and settings are still to do |
-| **M3** Library and gig mode | In progress. The library is exposed to the app; all its screens are built and work on the phone: songs (edited on the live metronome), setlists, the setlist page (tap a song to start or stop its click), settings, and export/import of a zip. Not yet judged by hand: how it feels in use, and a transfer to a second physical phone |
-| **M4** Hardening + release build | In progress. Interruptions, a first accessibility pass, the app icon, the release build (2.4 MB) and lint are done. Still to do: the on-device checklist with headphones, Bluetooth and a call, a TalkBack walk-through, and your own signing key |
+| **M0** Setup + audio spike | Done, apart from a listening check of a long screen-off run, a long run with the `delivered` frame counter, and a second device. The audio is steady and glitch-free on one phone (see [testing](docs/testing.md#measured-results)) |
+| **M1** Core in Rust | Done. The engine and the markdown library (songs table, setlists, settings, zip export/import; see the [file format](docs/file-format.md)): 216 tests, and 21 more for the interface the app calls |
+| **M2** Android main screen | Built and checked on the phone with adb. Still for a human to judge: whether the flash lines up with the click, and tap tempo with a real finger |
+| **M3** Library and gig mode | Done on one phone: the tab bar (Metronome, Lists, Settings), the Metronome tab that also edits the current song, "All songs" and setlists where a tap starts or stops a song's click, editing setlists, settings, and export/import of a zip. Not tried: moving a library to a second physical phone |
+| **M4** Hardening + release build | Mostly done: interruptions, a first accessibility pass, the app icon, lint, the size gate, and signed releases with the release key (the APK is 2.4 MB). Seen on the phone: the click stops when wired headphones are unplugged or another app takes the audio. Still open: a Bluetooth device switching off, a real call, the notification's Stop button, TalkBack, rotation and a second phone |
 | **M5** iPhone app | Not started (needs Xcode) |
+
+Releases so far, all marked as pre-releases: 0.9.0 (5 October 2026), 0.10.0 (16 November) and
+0.11.0 (18 November).
 
 Everything measured so far comes from one phone, a Pixel 8 Pro running Android 17; the iPhone
 side is unverified. The app is built to install on Android 8 and up, but it has only ever been run
