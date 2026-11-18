@@ -7,7 +7,9 @@ android/app/src/main/assets/licenses.txt, which the About screen shows.
 
 Rust crates: the license files in each crate's package (cargo metadata, Android target, normal
 dependencies of metronom-ffi). Android libraries: the license named in each one's POM, from
-Gradle's cache (releaseRuntimeClasspath). Identical texts are written once.
+Gradle's cache (releaseRuntimeClasspath). Gradle's periodic cache cleanup deletes POM files it no
+longer reads, so when any is missing the dependencies are resolved once more with
+--refresh-dependencies, which downloads them again. Identical texts are written once.
 Format of the file: blocks that start with a line `## title`; the text follows.
 """
 import collections
@@ -98,11 +100,11 @@ def rust_texts(crates):
     return by_text, without
 
 
-def gradle_dependencies():
-    out = subprocess.run(
-        ["./gradlew", "--console=plain", "--quiet", ":app:dependencies", "--configuration", "releaseRuntimeClasspath"],
-        cwd=ROOT / "android", check=True, capture_output=True, text=True,
-    ).stdout
+def gradle_dependencies(refresh=False):
+    command = ["./gradlew", "--console=plain", "--quiet", ":app:dependencies", "--configuration", "releaseRuntimeClasspath"]
+    if refresh:
+        command.append("--refresh-dependencies")
+    out = subprocess.run(command, cwd=ROOT / "android", check=True, capture_output=True, text=True).stdout
     found = {}
     for line in out.splitlines():
         m = re.search(r"[+\\]--- ([\w.\-]+):([\w.\-]+)(?::([\w.\-]+))?(?: -> ([\w.\-]+))?", line)
@@ -114,9 +116,13 @@ def gradle_dependencies():
     return sorted((g, a, v) for (g, a), v in found.items())
 
 
-def pom_licenses(group, artifact, version, depth=0):
+def find_poms(group, artifact, version):
     home = pathlib.Path(os.path.expanduser("~/.gradle/caches/modules-2/files-2.1"))
-    poms = sorted(glob.glob(str(home / group / artifact / version / "*" / f"{artifact}-{version}.pom")))
+    return sorted(glob.glob(str(home / group / artifact / version / "*" / f"{artifact}-{version}.pom")))
+
+
+def pom_licenses(group, artifact, version, depth=0):
+    poms = find_poms(group, artifact, version)
     if not poms:
         return []
     root = ET.parse(poms[0]).getroot()
@@ -147,6 +153,10 @@ def build() -> str:
     ))
 
     android = gradle_dependencies()
+    missing = [f"{g}:{a}:{v}" for g, a, v in android if not find_poms(g, a, v) and not f"{g}:{a}".startswith(APACHE_PUBLISHERS)]
+    if missing:
+        print(f"{len(missing)} POM files are not in Gradle's cache (e.g. {missing[0]}); downloading them again", file=sys.stderr)
+        android = gradle_dependencies(refresh=True)
     apache_libs, other, unknown = [], collections.defaultdict(list), []
     for g, a, v in android:
         names = pom_licenses(g, a, v)

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.HorizontalDivider
@@ -49,7 +48,7 @@ private fun parseLicenses(file: String): List<LicenseBlock> =
  * (their licenses ask for these to come with the app). A notice opens when you tap its title.
  */
 @Composable
-fun AboutScreen(onBack: () -> Unit) {
+fun AboutScreen() {
   val context = LocalContext.current
   val version = remember { context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "" }
   var blocks by remember { mutableStateOf<List<LicenseBlock>?>(null) }
@@ -61,12 +60,7 @@ fun AboutScreen(onBack: () -> Unit) {
       }
   }
 
-  Column(Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 24.dp, vertical = 12.dp)) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-      TextButton(onClick = onBack) { Text("‹ ${stringResource(R.string.back)}") }
-      Spacer(Modifier.weight(1f))
-      Text(stringResource(R.string.about), style = MaterialTheme.typography.titleMedium)
-    }
+  Column(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 12.dp)) {
     LazyColumn(Modifier.weight(1f)) {
       item {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 8.dp)) {

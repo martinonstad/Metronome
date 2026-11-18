@@ -26,7 +26,7 @@ Metronom is built with the open-source libraries listed here. Their licenses ask
 notices to come with the app. The file is made by scripts/generate-licenses.sh from the
 libraries' own license files.
 
-## Android libraries, Apache License 2.0 (108)
+## Android libraries, Apache License 2.0 (111)
 Used under the Apache License, Version 2.0:
 androidx.activity:activity:1.13.0
 androidx.activity:activity-compose:1.13.0
@@ -49,6 +49,8 @@ androidx.compose.foundation:foundation:1.10.6
 androidx.compose.foundation:foundation-android:1.10.6
 androidx.compose.foundation:foundation-layout:1.10.6
 androidx.compose.foundation:foundation-layout-android:1.10.6
+androidx.compose.material:material-icons-core:1.7.8
+androidx.compose.material:material-icons-core-android:1.7.8
 androidx.compose.material:material-ripple:1.10.6
 androidx.compose.material:material-ripple-android:1.10.6
 androidx.compose.material3:material3:1.4.0
@@ -128,6 +130,7 @@ com.google.guava:listenablefuture:1.0
 net.java.dev.jna:jna:5.19.1
 org.jetbrains:annotations:23.0.0
 org.jetbrains.kotlin:kotlin-stdlib:2.3.20
+org.jetbrains.kotlin:kotlin-stdlib-common:2.3.20
 org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0
 org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.9.0
 org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0

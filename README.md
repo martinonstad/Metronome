@@ -28,10 +28,11 @@ can edit by hand and move to a new phone.
 
 | Area | What it does |
 |---|---|
-| Metronome | One screen, no scrolling. Tempo 30–300 BPM: tap the number to type it, or use the slider, −/+ or tap tempo. Beats per bar 1–99; the first beat of each bar is accented. Four synthesized sounds, volume. What you have set can be saved as a song, and added to setlists, in one go |
+| Metronome | One screen, no scrolling, which is also where a song is edited. Tempo 30–300 BPM: tap the number to type it, or use the slider, −/+ or tap tempo. Beats per bar 1–99 (− and + around the beat dots); the first beat of each bar is accented. Four synthesized sounds, volume. What you have set is saved as a song, and added to setlists, in one go |
 | Visual | A flash bar and one dot per beat, driven by the audio clock so they line up with what you hear |
-| Library | Every song in one list; setlists tagged with a band/project; create, edit, delete, reorder and copy in the app. A song is edited on the live metronome, with the same controls as the main screen |
-| Gig mode | Pick a setlist and see all its songs. Tap a song to start its click, tap it again to stop; tap another and the click keeps running and switches tempo on the next beat |
+| Lists | "All songs" and your setlists, tagged with a band/project, under one tab. Create, edit, delete, reorder and copy in the app; ✎ on any song opens it on the metronome to edit |
+| Gig mode | Open a list and see all its songs. Tap a song to start its click, tap it again to stop; tap another and the click keeps running and switches tempo on the next beat |
+| Navigation | A tab bar on every page: Metronome, Lists, Settings. No Back buttons; each tab remembers where you were |
 | Files | Everything stored as markdown; export/import as a zip |
 | Phone | Plays with the screen locked (foreground service), pauses on calls, optional keep-screen-on |
 
