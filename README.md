@@ -70,12 +70,12 @@ fingerprint is:
 To check an APK you downloaded (this needs the Android SDK build tools):
 
 ```bash
-apksigner verify --print-certs Metronom-0.9.0.apk
+apksigner verify --print-certs Metronom-0.11.0.apk
 ```
 
 The line `Signer #1 certificate SHA-256 digest` must show the fingerprint above, written in lower case
 without the colons. If it shows anything else, do not install it. A release also comes with a
-`.sha256` file for the download itself (`shasum -a 256 -c Metronom-0.9.0.apk.sha256`). How releases are
+`.sha256` file for the download itself (`shasum -a 256 -c Metronom-0.11.0.apk.sha256`). How releases are
 built and signed is in [docs/development.md](docs/development.md#release-build).
 
 ## Quick start (development)
